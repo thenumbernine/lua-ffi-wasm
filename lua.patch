@@ -24,3 +24,30 @@ index 69808f84..6376f2d9 100644
    {NULL, NULL}
  };
  
+diff --git a/luaconf.h b/luaconf.h
+index 33bb580d..71208dc5 100644
+--- a/luaconf.h
++++ b/luaconf.h
+@@ -284,6 +284,7 @@
+ ** the libraries, you may want to use the following definition (define
+ ** LUA_BUILD_AS_DLL to get it).
+ */
++#if !defined(LUA_API)
+ #if defined(LUA_BUILD_AS_DLL)	/* { */
+ 
+ #if defined(LUA_CORE) || defined(LUA_LIB)	/* { */
+@@ -292,11 +293,14 @@
+ #define LUA_API __declspec(dllimport)
+ #endif						/* } */
+ 
++#elif defined __GNUC__
++# define LUA_API __attribute__((visibility("default")))
+ #else				/* }{ */
+ 
+ #define LUA_API		extern
+ 
+ #endif				/* } */
++#endif
+ 
+ 
+ /*

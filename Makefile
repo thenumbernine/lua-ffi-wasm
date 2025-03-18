@@ -18,7 +18,7 @@ LDFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 #LDFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
 LDFLAGS+= -s EXPORT_ALL=1 # https://stackoverflow.com/a/33206957 ....  THIS IS NOT NEEDED TO EXPORT ALL TO WASM, BUT IT IS NEEDED TO EXPORT ALL TO JS !!!!! EMSCRIPTEN!!!!!
 #LDFLAGS+= -s LINKABLE=1 -sEXPORT_ALL=1 # https://stackoverflow.com/a/33208675
-LDFLAGS+= -s LINKABLE=1
+LDFLAGS+= -s LINKABLE=1 # I need this to export **ANYTHING** but if I enable it then I can't also see malloc .. WHAT KIND OF STUPID IS AT PLAY HERE?! JUST WRITE _malloc TO Module LIKE YOU DO EVERYTHING ELSE!!!  OH WAIT, THE WARNING WAS LYING! DESPITE THE WARNING IT IN FACT DOES WRITE OUT _malloc, BUT WONT WITHOUT THE DEPRECATED VAR!
 #LDFLAGS+= -s IGNORE_MISSING_MAIN=1 # ... isn't ignoring missing main ...
 LDFLAGS+= --no-entry
 #LDFLAGS+= -s STANDALONE_WASM	# https://stackoverflow.com/a/70230725
@@ -36,6 +36,7 @@ LDFLAGS+= -s WASM=1 		# so I guess I have to output to javascript to use the fil
 LDFLAGS+= -s ENVIRONMENT=web		# https://gioarc.me/posts/games/wasm-ii.html
 LDFLAGS+= -s ALLOW_TABLE_GROWTH=1
 LDFLAGS+= -s 'EXPORT_NAME="lua"'
+LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc", "_free"]'	# https://github.com/emscripten-core/emscripten/issues/6882#issuecomment-406745898
 LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "ccall", "cwrap", "stringToNewUTF8", "addFunction"]'  # https://stackoverflow.com/a/64021522
 #LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "cwrap", "allocate", "intArrayFromString"]'  # https://stackoverflow.com/a/64021522 https://github.com/emscripten-core/emscripten/issues/6061#issuecomment-357150650 and https://stackoverflow.com/a/46855162
 # ... and absolutely none of these show up in the exports ...

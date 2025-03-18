@@ -5,12 +5,12 @@ CFLAGS=-std=gnu99 -O2 -Wall -Wextra -DLUA_COMPAT_5_3 -fPIC
 CFLAGS+= -I lua/
 
 # emcc final:
-#CC=emcc
-#LUA=lua.wasm
+CC=emcc
+LUA=lua.wasm
 
 # local arch testing:
-cc=clang
-LUA=lua.out	# because 'lua' is a submodule - name in the dir is already used
+#cc=clang
+#LUA=lua.out	# because 'lua' is a submodule - name in the dir is already used
 
 .PHONY: all clean
 all: $(LUA)

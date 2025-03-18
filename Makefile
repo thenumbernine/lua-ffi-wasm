@@ -6,7 +6,7 @@ CFLAGS+= -I lua/
 
 # emcc final:
 CC=emcc
-LUA=lua.wasm
+LUA=lua-5.4.7-with-ffi.wasm
 
 # local arch testing:
 #cc=clang

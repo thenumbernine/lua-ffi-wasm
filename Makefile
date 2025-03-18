@@ -6,6 +6,9 @@ CFLAGS= -Wall -Wextra -DLUA_COMPAT_5_3 -I lua/
 LDFLAGS=
 
 ############ emcc final:
+CC=emcc
+#LUA=lua-5.4.7-with-ffi.wasm
+LUA=lua-5.4.7-with-ffi.js
 CFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 #CFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
 ##	-target=wasm64-unknown-emscripten
@@ -13,29 +16,41 @@ CFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 #LDFLAGS+= --profiling-funcs
 LDFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 #LDFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
-#LDFLAGS+= -sEXPORT_ALL=1 # https://stackoverflow.com/a/33206957
-LDFLAGS+= -sLINKABLE=1 -sEXPORT_ALL=1 # https://stackoverflow.com/a/33208675
-#LDFLAGS+= -sIGNORE_MISSING_MAIN=1 # ... isn't ignoring missing main ...
+LDFLAGS+= -s EXPORT_ALL=1 # https://stackoverflow.com/a/33206957 ....  THIS IS NOT NEEDED TO EXPORT ALL TO WASM, BUT IT IS NEEDED TO EXPORT ALL TO JS !!!!! EMSCRIPTEN!!!!!
+#LDFLAGS+= -s LINKABLE=1 -sEXPORT_ALL=1 # https://stackoverflow.com/a/33208675
+LDFLAGS+= -s LINKABLE=1
+#LDFLAGS+= -s IGNORE_MISSING_MAIN=1 # ... isn't ignoring missing main ...
 LDFLAGS+= --no-entry
-LDFLAGS+= -sSTANDALONE_WASM	# https://stackoverflow.com/a/70230725
+#LDFLAGS+= -s STANDALONE_WASM	# https://stackoverflow.com/a/70230725
 # fun story
-# DEFAULT_TO_CXX=1 by default, which converts all the C symbols to C++ symbols and then mangles them into absolute worthlessness
-# SO
+# DEFAULT_TO_CXX=1 by default, which converts all the C symbols to C++ symbols and then mangles them into absolute worthlessness ... SO
 # if you ever compile ***ANY C CODE*** in emscripten, your symbols ***BECOME TRASH*** without doing this ***AND*** adding `__attribute__((visibility("default")))` to all of them.
-LDFLAGS+= -sDEFAULT_TO_CXX=0
-CC=emcc
-LUA=lua-5.4.7-with-ffi.wasm
+LDFLAGS+= -s DEFAULT_TO_CXX=0
+# now how do I get access to the filesystem module ...
+LDFLAGS+= -s FILESYSTEM=1
+LDFLAGS+= -s FORCE_FILESYSTEM=1
+LDFLAGS+= -s MODULARIZE=1 	# warning: MODULARIZE is only valid when generating JavaScript
+#LDFLAGS+= -s EXPORT_ES6=1 # warning: EXPORT_ES6 is only valid when generating JavaScript . ... with js and wasm=1 I'm not seeing FS ...
+#LDFLAGS+= -s WASM=0
+LDFLAGS+= -s WASM=1 		# so I guess I have to output to javascript to use the filesystem ... ?
+LDFLAGS+= -s ENVIRONMENT=web		# https://gioarc.me/posts/games/wasm-ii.html
+LDFLAGS+= -s 'EXPORT_NAME="lua"'
+LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS"]'  # https://stackoverflow.com/a/64021522
+#LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "cwrap", "allocate", "intArrayFromString"]'  # https://stackoverflow.com/a/64021522 https://github.com/emscripten-core/emscripten/issues/6061#issuecomment-357150650 and https://stackoverflow.com/a/46855162
+# ... and absolutely none of these show up in the exports ...
+
 
 ############ clang, since emcc is wedging in tons of c++ crap, mangling symbol names, etc
-# ... needs libc, or idk where wasm-libc is
-#	#CFLAGS+=  --no-standard-libraries
 #	CC=clang --target=wasm64 -Wl,--export-all -Wl,--no-entry
 #	LUA=lua-5.4.7-with-ffi.wasm
+# ... needs libc, or idk where wasm-libc is
+#	#CFLAGS+=  --no-standard-libraries
+
 
 ############ local arch testing:
-#	CFLAGS+= -O2 -fPIC
 #	cc=clang
 #	LUA=lua.out	# because 'lua' is a submodule - name in the dir is already used
+#	CFLAGS+= -O2 -fPIC
 
 
 

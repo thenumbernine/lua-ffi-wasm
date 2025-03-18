@@ -1,0 +1,26 @@
+diff --git a/linit.c b/linit.c
+index 69808f84..6376f2d9 100644
+--- a/linit.c
++++ b/linit.c
+@@ -34,6 +34,9 @@
+ #include "lualib.h"
+ #include "lauxlib.h"
+ 
++// Chris: wedging this in there ...
++//#include "../luaffifb/ffi.h"
++int luaopen_ffi(lua_State* L);
+ 
+ /*
+ ** these libs are loaded by lua.c and are readily available to any Lua
+@@ -50,6 +53,11 @@ static const luaL_Reg loadedlibs[] = {
+   {LUA_MATHLIBNAME, luaopen_math},
+   {LUA_UTF8LIBNAME, luaopen_utf8},
+   {LUA_DBLIBNAME, luaopen_debug},
++
++// Chris: wedging this in there ...
++// I guess I should insert it into one of the loaders instead of always here , but meh, this is a giant hack anyways
++  {"ffi", luaopen_ffi},
++
+   {NULL, NULL}
+ };
+ 

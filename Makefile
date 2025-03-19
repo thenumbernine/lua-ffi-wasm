@@ -34,9 +34,10 @@ LDFLAGS+= -s MODULARIZE=1 	# warning: MODULARIZE is only valid when generating J
 #LDFLAGS+= -s WASM=0
 LDFLAGS+= -s WASM=1 		# so I guess I have to output to javascript to use the filesystem ... ?
 LDFLAGS+= -s ENVIRONMENT=web		# https://gioarc.me/posts/games/wasm-ii.html
-LDFLAGS+= -s ALLOW_TABLE_GROWTH=1
+LDFLAGS+= -s ALLOW_TABLE_GROWTH=1	# without it no dynamic stuff I guess?
+#LDFLAGS+= -s MEMORY64=1				# otherwise I'm getting the weird case that void*'s are 4bytes but structs-of-void*'s align to 8 bytes ...
 LDFLAGS+= -s 'EXPORT_NAME="lua"'
-LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc", "_free"]'	# https://github.com/emscripten-core/emscripten/issues/6882#issuecomment-406745898
+LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc", "_free", "_dlsym", "_dlopen"]'	# https://github.com/emscripten-core/emscripten/issues/6882#issuecomment-406745898
 LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "ccall", "cwrap", "stringToNewUTF8", "addFunction"]'  # https://stackoverflow.com/a/64021522
 #LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "cwrap", "allocate", "intArrayFromString"]'  # https://stackoverflow.com/a/64021522 https://github.com/emscripten-core/emscripten/issues/6061#issuecomment-357150650 and https://stackoverflow.com/a/46855162
 # ... and absolutely none of these show up in the exports ...

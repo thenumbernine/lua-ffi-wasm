@@ -66,7 +66,7 @@ export { Module as lua };
 -- replace the wasm path 
 -- dist name here
 local count
-d, count = d:gsub((('%q'):format(cmdline.inwasm)):patescape(), 'wasmPath')
+d, count = d:gsub('["\']'..cmdline.inwasm:patescape()..'["\']', 'wasmPath')
 assert.eq(count, 1, "failed to find wasm destname")
 d = [[
 const wasmPath = ]]..('%q'):format(cmdline.outwasm)..[[;

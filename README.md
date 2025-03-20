@@ -38,13 +38,14 @@ What else I tried before I came to this option:
 - Other contenders?
 	- https://github.com/Doridian/LuaJS
 
-# BUGS
+# LUALIBFB FIXES
 
 - `ffi.null` as well as `ffi.NULL`
 - luaffifb C type objects (ffi.typeof / ffi.metatype results) don't also to their object's metatable, especially `__index`. This is not the case in LuaJIT.
 - `print(ffi.cast('void*', ffi.cast('vec3f_t*', 0)+1))` should show `0xc`, but instead it shows `vec3f(1,1,1)` ... an error in luaffifb with its cdata of pointers' metamethods, esp +, is treating the pointer as its data when it should be doing pointer-arithmetic.
+- why do I think `tonumber(ffi.new('int64_t', 0))` is serializing first and then parsing the string to a number?  Is there a better way to convert int64 boxed type to lua integer ...
 
-# IMPROVEMENTS:
+# MAKEFILE FIXES:
 
 - outputting pure wasm.  I'm outptting js+wasm now because this seems to be the only way to get emscripten's virtual filesystem.  switching to wasm output makes FS go away.
 - dlsym doesn't work, so no functions in `ffi.cdef` work
@@ -52,3 +53,4 @@ What else I tried before I came to this option:
 	1) I don't think I've got ffi to dlsym into anything.  I don't think I've seen emscripten's dlsym work whatsoever, it only ever returns 0's, even for functions that are there and are exported and are being used.
 	2) emscripten has its own binding layer, but when I enable `FULL_ES3` and export, say, `glEnable`, it gives me back JS code - not wasm code with a symbol.  
 		- Maybe this is because I'm outputting JS+WASM, and that means I have to switch back to pure-WASM
+- why are there underscores before all my symobl names? there weren't when i outputted pure wasm (and missed out on the filesystem).  I see emscripten is manaully inserting them in the exports: `Module['_luaL_addstring'] = wasmExports['luaL_addstring']`.  WHYYYYY?  I'll manually remove them if I have to.  Maybe later I'll switch to pure-wasm.

@@ -7,8 +7,8 @@ LDFLAGS=
 
 ############ emcc final:
 CC=emcc
-#LUA=lua-5.4.7-with-ffi.wasm
-LUA=lua-5.4.7-with-ffi.js
+DIST=lua-5.4.7-with-ffi.js
+DIST_WASM=lua-5.4.7-with-ffi.wasm
 CFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 #CFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
 ##	-target=wasm64-unknown-emscripten
@@ -46,23 +46,23 @@ LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "ccall", "cwrap", "stringToNewUTF8
 
 ############ clang, since emcc is wedging in tons of c++ crap, mangling symbol names, etc
 #	CC=clang --target=wasm64 -Wl,--export-all -Wl,--no-entry
-#	LUA=lua-5.4.7-with-ffi.wasm
+#	DIST=lua-5.4.7-with-ffi.wasm
 # ... needs libc, or idk where wasm-libc is
 #	#CFLAGS+=  --no-standard-libraries
 
 
 ############ local arch testing:
 #	cc=clang
-#	LUA=lua.out	# because 'lua' is a submodule - name in the dir is already used
+#	DIST=lua.out	# because 'lua' is a submodule - name in the dir is already used
 #	CFLAGS+= -O2 -fPIC
 
 
 
 .PHONY: all clean
-all: $(LUA)
+all: $(DIST)
 
 clean:
-	-rm *.o $(LUA)
+	-rm *.o $(DIST)
 
 # Lua 5.4.7
 
@@ -181,12 +181,13 @@ luaffifb_parser.o: luaffifb/parser.c
 
 # final
 
-$(LUA): \
+$(DIST): \
 	lapi.o lcode.o lctype.o ldebug.o ldo.o ldump.o lfunc.o lgc.o llex.o lmem.o lobject.o lopcodes.o lparser.o lstate.o lstring.o ltable.o ltm.o lundump.o lvm.o lzio.o lauxlib.o lbaselib.o lcorolib.o ldblib.o liolib.o lmathlib.o loadlib.o loslib.o lstrlib.o ltablib.o lutf8lib.o linit.o \
 	luaffifb_call.o luaffifb_ctype.o luaffifb_ffi.o luaffifb_parser.o
 	#lua.o
 	$(CC) $(LDFLAGS) -o $@ $^
+	# last step
+	# fix the es6 exporter
+	# and fix the .js' loading .wasm location
+	./fixjs.lua injs=$(DIST) inwasm=$(DIST_WASM) outjs=$(DIST) outwasm=/js/$(DIST_WASM)
 
-# TODO last step
-# fix the es6 exporter
-# and fix the .js' loading .wasm location

@@ -12,6 +12,7 @@ LDFLAGS=
 # osx notice: use brew clang since builtin clang is a few versions behind and doesn't yet have wasm target: 
 #   `export PATH=/usr/local/opt/llvm/bin:$PATH`
 CC=clang
+#CC=clang++
 O=.o	# .bc ?
 DIST=lua-5.4.7-with-ffi.wasm	# .bca ?
 
@@ -19,9 +20,12 @@ DIST=lua-5.4.7-with-ffi.wasm	# .bca ?
 #CFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/sysroot 
 #LDFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/sysroot 
 # so just using `brew install wasi-libc wasi-runtimes` 
-# and now complex doesn't work, so what went wrong
-CFLAGS+= --sysroot /usr/local/Cellar/wasi-libc/25/share/wasi-sysroot
-LDFLAGS+= --sysroot /usr/local/Cellar/wasi-libc/25/share/wasi-sysroot
+# and now <complex.h> doesn't work, so what went wrong
+CFLAGS+= --sysroot /usr/local/Cellar/wasi-libc/25/share/wasi-sysroot	# works
+#LDFLAGS+= --sysroot /usr/local/Cellar/wasi-libc/25/share/wasi-sysroot	 # can't find -lc++ -lc++abi 
+#LDFLAGS+= --sysroot /usr/local/Cellar/wasi-runtimes/19.1.7/share/wasi-sysroot # can't find -lc -ldl etc ...
+# adding LDFLAGS also causes link errors of looking for some c++ abi
+# I suspect I shouldn't need to add either ... and that the wasi brew distribution is deficient?  or the brew configuration is messed up (since I'm export PATH this whole thing)
 
 #CFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/build # why ask me for an install dir if you're just going to install to ./sysroot ?
 #CFLAGS+= --target=wasm32-wasi # works 
@@ -40,7 +44,10 @@ LDFLAGS+= -lwasi-emulated-signal
 CFLAGS+= -mllvm -wasm-enable-sjlj
 # .. alternatively just compile ldo as C++ ( everything as C++?) and Lua will use throw instead:
 #CFLAGS+= -x c++ #-std=c++11
+#LDFLAGS+= -lc++ -lc++abi
+#CFLAGS+= -fno-exceptions # but I want to use exception based lua errors
 # but then I get link errors of `undefined symbol: __cxa_allocate_exception` so back to C...
+#CFLAGS+= "-DLUA_API=extern \"C\""	# without this the luaffifb can't see lua functions, cuz it expects lua's functions to be in C and not C++
 
 # tmpfile() is deprecated & L_tmpnam are missing on wasi-libc, so I made this flag to tell Lua build to get around that, and use the LUA_USE_POSIX tmpfile option:
 CFLAGS+= -DLUA_TMPFILE_MISSING
@@ -64,9 +71,6 @@ LDFLAGS+= -ldl	# dlopen/dlsym
 CFLAGS+= -DLUA_MISSING_SYSTEM
 
 # where'd my symbols go?
-#LDFLAGS+= -fvisibility default
-#CFLAGS+= -fPIC "-DLUA_API=extern"
-#LDFLAGS+= -shared # wasm-ld: warning: creating shared libraries, with -shared, is not yet stable
 LDFLAGS+= -Wl,--export-all
 
 

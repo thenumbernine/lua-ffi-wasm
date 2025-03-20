@@ -9,7 +9,7 @@ LDFLAGS=
 
 
 ############ clang, since emcc is wedging in tons of c++ crap, mangling symbol names, etc
-# osx notice: use brew clang since builtin clang is a few versions behind and doesn't yet have wasm target: 
+# osx notice: use brew clang since builtin clang is a few versions behind and doesn't yet have wasm target:
 #   `export PATH=/usr/local/opt/llvm/bin:$PATH`
 CC=clang
 #CC=clang++
@@ -17,30 +17,30 @@ O=.o	# .bc ?
 DIST=lua-5.4.7-with-ffi.wasm	# .bca ?
 
 # wasi-libc I built myself .. still missingruntimes,
-#CFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/sysroot 
-#LDFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/sysroot 
-# so just using `brew install wasi-libc wasi-runtimes` 
+#CFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/sysroot
+#LDFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/sysroot
+# so just using `brew install wasi-libc wasi-runtimes`
 # and now <complex.h> doesn't work, so what went wrong
 CFLAGS+= --sysroot /usr/local/Cellar/wasi-libc/25/share/wasi-sysroot	# works
-#LDFLAGS+= --sysroot /usr/local/Cellar/wasi-libc/25/share/wasi-sysroot	 # can't find -lc++ -lc++abi 
+#LDFLAGS+= --sysroot /usr/local/Cellar/wasi-libc/25/share/wasi-sysroot	 # can't find -lc++ -lc++abi
 #LDFLAGS+= --sysroot /usr/local/Cellar/wasi-runtimes/19.1.7/share/wasi-sysroot # can't find -lc -ldl etc ...
 # adding LDFLAGS also causes link errors of looking for some c++ abi
 # I suspect I shouldn't need to add either ... and that the wasi brew distribution is deficient?  or the brew configuration is messed up (since I'm export PATH this whole thing)
 
 #CFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/build # why ask me for an install dir if you're just going to install to ./sysroot ?
-#CFLAGS+= --target=wasm32-wasi # works 
+#CFLAGS+= --target=wasm32-wasi # works
 #CFLAGS+= --target=wasm64 # 'string.h' file not found
 #CFLAGS+= --target=wasm64-wasi # 'string.h' file not found
 #CFLAGS+= --target=wasm64-unknown-wasi # 'string.h' file not found
 CFLAGS+= --target=wasm32-unknown-wasi # works
-LDFLAGS+= --target=wasm32-unknown-wasi 
+LDFLAGS+= --target=wasm32-unknown-wasi
 CFLAGS+= -O2
 
 # for signals:
 CFLAGS+= -D_WASI_EMULATED_SIGNAL
 LDFLAGS+= -lwasi-emulated-signal
 
-# for longjmp ... 
+# for longjmp ...
 CFLAGS+= -mllvm -wasm-enable-sjlj
 # .. alternatively just compile ldo as C++ ( everything as C++?) and Lua will use throw instead:
 #CFLAGS+= -x c++ #-std=c++11
@@ -53,11 +53,11 @@ CFLAGS+= -mllvm -wasm-enable-sjlj
 CFLAGS+= -DLUA_TMPFILE_MISSING
 
 # for clock() to work:
-CFLAGS+= -D_WASI_EMULATED_PROCESS_CLOCKS 
+CFLAGS+= -D_WASI_EMULATED_PROCESS_CLOCKS
 LDFLAGS+= -lwasi-emulated-process-clocks
 
 # mmap:
-CFLAGS+= -D_WASI_EMULATED_MMAN 
+CFLAGS+= -D_WASI_EMULATED_MMAN
 LDFLAGS+= -lwasi-emulated-mman
 
 # for luaffifb to tell the arch
@@ -66,12 +66,14 @@ CFLAGS+= -D__WASM__
 LDFLAGS+= -ldl	# dlopen/dlsym
 
 # "Despite claiming to be ISO C, iOS does not implement 'system'."
-#CFLAGS+= -DLUA_USE_IOS	
+#CFLAGS+= -DLUA_USE_IOS
 # but if you enable this it causes lots more compile/link errors to pop up ... so ...
 CFLAGS+= -DLUA_MISSING_SYSTEM
 
-# where'd my symbols go?
-LDFLAGS+= -Wl,--export-all
+LDFLAGS+= -Wl,--export-all	# where'd my symbols go?
+
+# now for porting all those emscripten flags to clang flags (in emscripten's libexec/tools/building.py)
+LDFLAGS+= -Wl,--growable-table -Wl,--max-memory=2147483648
 
 
 

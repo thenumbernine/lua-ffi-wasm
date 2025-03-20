@@ -26,6 +26,27 @@ index ea052950..0d6ebc6c 100644
  /* ISO C handling with long jumps */
  #define LUAI_THROW(L,c)		longjmp((c)->b, 1)
  #define LUAI_TRY(L,c,a)		if (setjmp((c)->b) == 0) { a }
+diff --git a/linit.c b/linit.c
+index 69808f84..ef409cfd 100644
+--- a/linit.c
++++ b/linit.c
+@@ -34,6 +34,8 @@
+ #include "lualib.h"
+ #include "lauxlib.h"
+ 
++// for the sake of the native build this is a good idea to put this here:
++int luaopen_ffi(lua_State *L);
+ 
+ /*
+ ** these libs are loaded by lua.c and are readily available to any Lua
+@@ -50,6 +52,7 @@ static const luaL_Reg loadedlibs[] = {
+   {LUA_MATHLIBNAME, luaopen_math},
+   {LUA_UTF8LIBNAME, luaopen_utf8},
+   {LUA_DBLIBNAME, luaopen_debug},
++  {"ffi", luaopen_ffi},
+   {NULL, NULL}
+ };
+ 
 diff --git a/liolib.c b/liolib.c
 index c5075f3e..56c0e733 100644
 --- a/liolib.c

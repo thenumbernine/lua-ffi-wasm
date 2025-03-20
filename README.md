@@ -38,13 +38,6 @@ What else I tried before I came to this option:
 - Other contenders?
 	- https://github.com/Doridian/LuaJS
 
-# LUALIBFB FIXES
-
-- `ffi.null` as well as `ffi.NULL`
-- luaffifb C type objects (ffi.typeof / ffi.metatype results) don't also to their object's metatable, especially `__index`. This is not the case in LuaJIT.
-- `print(ffi.cast('void*', ffi.cast('vec3f_t*', 0)+1))` should show `0xc`, but instead it shows `vec3f(1,1,1)` ... an error in luaffifb with its cdata of pointers' metamethods, esp +, is treating the pointer as its data when it should be doing pointer-arithmetic.
-- why do I think `tonumber(ffi.new('int64_t', 0))` is serializing first and then parsing the string to a number?  Is there a better way to convert int64 boxed type to lua integer ...
-
 # MAKEFILE FIXES:
 
 - outputting pure wasm.  I'm outptting js+wasm now because this seems to be the only way to get emscripten's virtual filesystem.  switching to wasm output makes FS go away.

@@ -58,7 +58,10 @@ CFLAGS+= -D__WASM__
 
 LDFLAGS+= -ldl	# dlopen/dlsym
 
-CFLAGS+= -DLUA_USE_IOS	# "Despite claiming to be ISO C, iOS does not implement 'system'."
+# "Despite claiming to be ISO C, iOS does not implement 'system'."
+#CFLAGS+= -DLUA_USE_IOS	
+# but if you enable this it causes lots more compile/link errors to pop up ... so ...
+CFLAGS+= -DLUA_MISSING_SYSTEM
 
 # where'd my symbols go?
 #LDFLAGS+= -fvisibility default
@@ -251,16 +254,4 @@ luaffifb_parser$(O): luaffifb/parser.c
 $(DIST): \
 	lapi$(O) lcode$(O) lctype$(O) ldebug$(O) ldo$(O) ldump$(O) lfunc$(O) lgc$(O) llex$(O) lmem$(O) lobject$(O) lopcodes$(O) lparser$(O) lstate$(O) lstring$(O) ltable$(O) ltm$(O) lundump$(O) lvm$(O) lzio$(O) lauxlib$(O) lbaselib$(O) lcorolib$(O) ldblib$(O) liolib$(O) lmathlib$(O) loadlib$(O) loslib$(O) lstrlib$(O) ltablib$(O) lutf8lib$(O) linit$(O) \
 	luaffifb_call$(O) luaffifb_ctype$(O) luaffifb_ffi$(O) luaffifb_parser$(O)
-	#lua$(O)
 	$(CC) $(LDFLAGS) -o $@ $^
-	# clang is asking for wasm-ld, which isn't in the brew install ... some posts said install lld, that one's wasm-ld isn't compatible ... so here goes llvm-ar
-	#llvm-ar rcs $@ $^
-	# but whatever comes out of this isn't wasm ...
-	# adding brew lld I get this:
-	# `wasm-ld: error: cannot open /usr/local/Cellar/llvm/19.1.7_1/lib/clang/19/lib/wasm32-unknown-wasi/libclang_rt.builtins.a: No such file or directory`
-	#
-	# last step
-	# fix the es6 exporter
-	# and fix the .js' loading .wasm location
-	#./fixjs.lua injs=$(DIST) inwasm=$(DIST_WASM) outjs=$(DIST) outwasm=/js/$(DIST_WASM)
-

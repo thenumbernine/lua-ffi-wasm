@@ -42,7 +42,7 @@ index c5075f3e..56c0e733 100644
  static int io_tmpfile (lua_State *L) {
    LStream *p = newfile(L);
 diff --git a/loslib.c b/loslib.c
-index ba80d72c..b1bb95a6 100644
+index ba80d72c..a0bec18f 100644
 --- a/loslib.c
 +++ b/loslib.c
 @@ -101,7 +101,40 @@
@@ -87,6 +87,15 @@ index ba80d72c..b1bb95a6 100644
  
  #include <unistd.h>
  
+@@ -130,7 +163,7 @@
+ 
+ 
+ #if !defined(l_system)
+-#if defined(LUA_USE_IOS)
++#if defined(LUA_USE_IOS) || defined(LUA_MISSING_SYSTEM)
+ /* Despite claiming to be ISO C, iOS does not implement 'system'. */
+ #define l_system(cmd) ((cmd) == NULL ? 0 : -1)
+ #else
 @@ -139,6 +172,7 @@
  #endif
  

@@ -4,3 +4,6 @@
 [submodule "luaffifb"]
 	path = luaffifb
 	url = https://github.com/thenumbernine/luaffifb
+[submodule "gnuplot"]
+	path = gnuplot
+	url = https://github.com/gnuplot/gnuplot

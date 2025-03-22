@@ -5,9 +5,6 @@ CFLAGS= -Wall -Wextra -DLUA_COMPAT_5_3 -I lua/
 #CFLAGS+=  -std=gnu99
 LDFLAGS=
 
-OBJS= lapi$(O) lcode$(O) lctype$(O) ldebug$(O) ldo$(O) ldump$(O) lfunc$(O) lgc$(O) llex$(O) lmem$(O) lobject$(O) lopcodes$(O) lparser$(O) lstate$(O) lstring$(O) ltable$(O) ltm$(O) lundump$(O) lvm$(O) lzio$(O) lauxlib$(O) lbaselib$(O) lcorolib$(O) ldblib$(O) liolib$(O) lmathlib$(O) loadlib$(O) loslib$(O) lstrlib$(O) ltablib$(O) lutf8lib$(O) linit$(O) \
-	luaffifb_call$(O) luaffifb_ctype$(O) luaffifb_ffi$(O) luaffifb_parser$(O)
-
 
 
 
@@ -135,132 +132,63 @@ OBJS= lapi$(O) lcode$(O) lctype$(O) ldebug$(O) ldo$(O) ldump$(O) lfunc$(O) lgc$(
 #	O=.o
 #	DIST=lua.out	# because 'lua' is a submodule - name in the dir is already used
 #	CFLAGS+= -O2 -fPIC
-#	OBJS+= lua$(O)
+#	LUA_SRCS+= lua/lua.c
+
+
 
 
 .PHONY: all clean
 all: $(DIST)
 
 clean:
-	-rm *$(O) $(DIST)
+	-rm $(DIST_OBJS) $(DIST)
+
+
 
 # Lua 5.4.7
 
-lapi$(O): lua/lapi.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+LUA_SRCS = $(patsubst %, lua/%, \
+	lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c \
+	lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c \
+	lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c \
+	lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c \
+	loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c \
+)
 
-lcode$(O): lua/lcode.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+LUA_OBJS = $(patsubst %.c, %$(O), $(LUA_SRCS))
 
-lctype$(O): lua/lctype.c
-	$(CC) $(CFLAGS) -c -o $@ $^
 
-ldebug$(O): lua/ldebug.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \
+	call.c ctype.c ffi.c parser.c \
+)
 
-ldo$(O): lua/ldo.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+LUAFFIFB_OBJS = $(patsubst %.c, %$(O), $(LUAFFIFB_SRCS))
 
-ldump$(O): lua/ldump.c
-	$(CC) $(CFLAGS) -c -o $@ $^
 
-lfunc$(O): lua/lfunc.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+# this is going to be a pain to configure and compile ...
+GNUPLOT_SRCS = $(patsubst %, gnuplot/src/%, \
+	alloc.c amos_airy.c axis.c breaders.c boundary.c color.c command.c command.c contour.c complexfun.c datablock.c datafile.c dynarray.c encoding.c \
+	eval.c external.c filters.c fit.c gadgets.c getcolor.c graph3d.c graphics.c help.c hidden3d.c history.c internal.c interpol.c jitter.c libcerf.c \
+	matrix.c misc.c mouse.c multiplot.c parse.c plot.c plot2d.c plot3d.c pm3d.c readline.c save.c scanner.c set.c show.c specfun.c standard.c stats.c \
+	stdfn.c tables.c tabulate.c term.c time.c unset.c util.c util3d.c variable.c version.c voxelgrid.c vplot.c watch.c xdg.c gp_cairo.c gp_cairo_helpers.c \
+	bf_test.c gplt_x11.c gpexecute.c getcolor.c checkdoc.c termdoc.c doc2ipf.c xref.c doc2tex.c termdoc.c doc2gih.c doc2rnh.c doc2hlp.c doc2rtf.c doc2ms.c \
+	termdoc.c doc2gih.c termdoc.c doc2html.c termdoc.c xref.c doc2web.c termdoc.c xref.c demo_plugin.c \
+)
 
-lgc$(O): lua/lgc.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+GNUPLOT_OBJS = $(patsubst %.c, %$(O), $(GNUPLOT_SRCS))
 
-llex$(O): lua/llex.c
-	$(CC) $(CFLAGS) -c -o $@ $^
 
-lmem$(O): lua/lmem.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+# TODO compile lua to a main module 
+#  and compile luaffifb and gnuplot to separate side modules
+# ... why even have any specific main? lua to a lib as well?  why not only ever side modules?
+DIST_OBJS= $(LUA_OBJS) $(LUAFFIFB_OBJS) 
+	# $(GNUPLOT_OBJS)
+	
 
-lobject$(O): lua/lobject.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lopcodes$(O): lua/lopcodes.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lparser$(O): lua/lparser.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lstate$(O): lua/lstate.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lstring$(O): lua/lstring.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-ltable$(O): lua/ltable.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-ltm$(O): lua/ltm.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lundump$(O): lua/lundump.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lvm$(O): lua/lvm.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lzio$(O): lua/lzio.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lauxlib$(O): lua/lauxlib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lbaselib$(O): lua/lbaselib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lcorolib$(O): lua/lcorolib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-ldblib$(O): lua/ldblib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-liolib$(O): lua/liolib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lmathlib$(O): lua/lmathlib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-loadlib$(O): lua/loadlib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-loslib$(O): lua/loslib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lstrlib$(O): lua/lstrlib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-ltablib$(O): lua/ltablib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-lutf8lib$(O): lua/lutf8lib.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-linit$(O): lua/linit.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-# only used by native build
-lua$(O): lua/lua.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-# LuaFFI-FB
-
-luaffifb_call$(O): luaffifb/call.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-luaffifb_ctype$(O): luaffifb/ctype.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-luaffifb_ffi$(O): luaffifb/ffi.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-
-luaffifb_parser$(O): luaffifb/parser.c
+# compile rule for all:
+%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 # final
-
-$(DIST): $(OBJS)
+$(DIST): $(DIST_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^

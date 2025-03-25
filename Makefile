@@ -83,15 +83,17 @@ LDFLAGS=
 	O=.o	# .bc?
 	DIST=lua-5.4.7-with-ffi.js
 	DIST_WASM=lua-5.4.7-with-ffi.wasm
-	CFLAGS+= -g3		# keep all debug info
-	LDFLAGS+= -g3		# keep all debug info
-	CFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
+	CFLAGS+= -g2		# keep all debug info
+	LDFLAGS+= -g2		# keep all debug info
+	#CFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 	#CFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
+	CFLAGS+= -O3
 	##	-target=wasm64-unknown-emscripten
 	#LDFLAGS+=- -no-debug -target=wasm64-unknown-emscripten -panic=trap -scheduler=none
 	#LDFLAGS+= --profiling-funcs
-	LDFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
+	#LDFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 	#LDFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
+	LDFLAGS+= -O3
 	LDFLAGS+= -s EXPORT_ALL=1 # https://stackoverflow.com/a/33206957 ....  THIS IS NOT NEEDED TO EXPORT ALL TO WASM, BUT IT IS NEEDED TO EXPORT ALL TO JS !!!!! EMSCRIPTEN!!!!!
 	#LDFLAGS+= -s LINKABLE=1 -sEXPORT_ALL=1 # https://stackoverflow.com/a/33208675
 	LDFLAGS+= -s LINKABLE=1 # I need this to export **ANYTHING** but if I enable it then I can't also see malloc .. WHAT KIND OF STUPID IS AT PLAY HERE?! JUST WRITE _malloc TO Module LIKE YOU DO EVERYTHING ELSE!!!  OH WAIT, THE WARNING WAS LYING! DESPITE THE WARNING IT IN FACT DOES WRITE OUT _malloc, BUT WONT WITHOUT THE DEPRECATED VAR!

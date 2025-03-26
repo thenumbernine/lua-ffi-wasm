@@ -38,7 +38,7 @@ What else I tried before I came to this option:
 - Other contenders?
 	- https://github.com/Doridian/LuaJS
 
-# MAKEFILE FIXES:
+# MAKEFILE TODO:
 
 - outputting pure wasm.  I'm outptting js+wasm now because this seems to be the only way to get emscripten's virtual filesystem.  switching to wasm output makes FS go away.
 - dlsym doesn't work, so no functions in `ffi.cdef` work
@@ -46,4 +46,7 @@ What else I tried before I came to this option:
 	1) I don't think I've got ffi to dlsym into anything.  I don't think I've seen emscripten's dlsym work whatsoever, it only ever returns 0's, even for functions that are there and are exported and are being used.
 	2) emscripten has its own binding layer, but when I enable `FULL_ES3` and export, say, `glEnable`, it gives me back JS code - not wasm code with a symbol.  
 		- Maybe this is because I'm outputting JS+WASM, and that means I have to switch back to pure-WASM
+- same with emscripten's ZLIB layer, but when I set `USE_ZLIB` I still don't see any zlib symbols...
+- same with emscripten's SDL layer
 - why are there underscores before all my symobl names? there weren't when i outputted pure wasm (and missed out on the filesystem).  I see emscripten is manaully inserting them in the exports: `Module['_luaL_addstring'] = wasmExports['luaL_addstring']`.  WHYYYYY?  I'll manually remove them if I have to.  Maybe later I'll switch to pure-wasm.
+- memory problems.  I tried `-mmemoryprofiler`, but all I see is an empty block "include memoryprofiler.js end include memoryprofiler.js" ...

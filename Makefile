@@ -94,6 +94,7 @@ LDFLAGS=
 	#LDFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 	#LDFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
 	LDFLAGS+= -O3
+	CFLAGS+= -fPIC
 	LDFLAGS+= -s EXPORT_ALL=1 # https://stackoverflow.com/a/33206957 ....  THIS IS NOT NEEDED TO EXPORT ALL TO WASM, BUT IT IS NEEDED TO EXPORT ALL TO JS !!!!! EMSCRIPTEN!!!!!
 	#LDFLAGS+= -s LINKABLE=1 -sEXPORT_ALL=1 # https://stackoverflow.com/a/33208675
 	LDFLAGS+= -s LINKABLE=1 # I need this to export **ANYTHING** but if I enable it then I can't also see malloc .. WHAT KIND OF STUPID IS AT PLAY HERE?! JUST WRITE _malloc TO Module LIKE YOU DO EVERYTHING ELSE!!!  OH WAIT, THE WARNING WAS LYING! DESPITE THE WARNING IT IN FACT DOES WRITE OUT _malloc, BUT WONT WITHOUT THE DEPRECATED VAR!
@@ -108,21 +109,21 @@ LDFLAGS=
 	# DEFAULT_TO_CXX=1 by default, which converts all the C symbols to C++ symbols and then mangles them into absolute worthlessness ... SO
 	# if you ever compile ***ANY C CODE*** in emscripten, your symbols ***BECOME TRASH*** without doing this ***AND*** adding `__attribute__((visibility("default")))` to all of them.
 	LDFLAGS+= -s DEFAULT_TO_CXX=0
-	CFLAGS+= "-DLUA_API=__attribute__((visibility(\"default\")))"
 	# now how do I get access to the filesystem module ...
 	LDFLAGS+= -s FILESYSTEM=1
 	LDFLAGS+= -s FORCE_FILESYSTEM=1
 	LDFLAGS+= -s MODULARIZE=1 	# warning: MODULARIZE is only valid when generating JavaScript
-	#LDFLAGS+= -s EXPORT_ES6=1 # warning: EXPORT_ES6 is only valid when generating JavaScript . ... with js and wasm=1 I'm not seeing FS ...
+	LDFLAGS+= -s EXPORT_ES6=1 # warning: EXPORT_ES6 is only valid when generating JavaScript . ... with js and wasm=1 I'm not seeing FS ...
 	#LDFLAGS+= -s WASM=0		# nope or it's pure javascript ...
 	LDFLAGS+= -s WASM=1 		# so I guess I have to output to javascript to use the filesystem ... ?
 	LDFLAGS+= -s ENVIRONMENT=web		# https://gioarc.me/posts/games/wasm-ii.html
 	LDFLAGS+= -s ALLOW_TABLE_GROWTH=1	# without it no dynamic stuff I guess?
 	LDFLAGS+= -s ALLOW_MEMORY_GROWTH=1	# otherwise my apps die after a few seconds
 	LDFLAGS+= -s TOTAL_MEMORY=512MB		# https://stackoverflow.com/questions/55884378/why-in-webassembly-does-allow-memory-growth-1-fail-while-total-memory-512mb-succ
+	LDFLAGS+= -s USE_ZLIB=1				# where is the symbols to this?!?! not being exported!!! wtf!!!
 	#LDFLAGS+= -s MEMORY64=1				# otherwise I'm getting the weird case that void*'s are 4bytes but structs-of-void*'s align to 8 bytes ...
-	LDFLAGS+= -s 'EXPORT_NAME="lua"'
-	LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc", "_free", "_dlsym", "_dlopen"]'	# https://github.com/emscripten-core/emscripten/issues/6882#issuecomment-406745898
+	#LDFLAGS+= -s 'EXPORT_NAME="lua"'		# HOW COME THIS IS NOT THE EXPORT NAME?!?!?! IT'S JUST THE INTERNAL VARIABLE NAME!!?!?!!!!!
+	#LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc", "_free", "_dlsym", "_dlopen"]'	# https://github.com/emscripten-core/emscripten/issues/6882#issuecomment-406745898
 	LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "ccall", "cwrap", "stringToNewUTF8", "addFunction"]'  # https://stackoverflow.com/a/64021522
 	#LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "cwrap", "allocate", "intArrayFromString"]'  # https://stackoverflow.com/a/64021522 https://github.com/emscripten-core/emscripten/issues/6061#issuecomment-357150650 and https://stackoverflow.com/a/46855162
 	# ... and absolutely none of these show up in the exports ...
@@ -195,3 +196,9 @@ DIST_OBJS= $(LUA_OBJS) $(LUAFFIFB_OBJS)
 # final
 $(DIST): $(DIST_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^
+	# import all from wasmExports to Module (so I don't have to deal with emscripten manually inserting those stupid underscores):
+	-rua -e "local p=path'$(DIST)' p:write((p:read():gsub(('createWasm();'):patescape(), 'createWasm(); for (let [k,v] of Object.entries(wasmExports)) { Module[k] = v; }')))"
+	# don't bother save local variables that are never used, i.e. lua_* functions:
+	-rua -e "local p=path'$(DIST)' p:write(p:read():split'\\n':filter([l] not l:match'^var _lua.*'):concat'\n')"
+	# can I strip out alll the module name crap?
+	-rua -e "local p=path'$(DIST)' p:write((p:read():gsub('Module..[^\\n]*.. = wasmExports', 'wasmExports')))"

@@ -87,16 +87,16 @@ LDFLAGS=
 	LDFLAGS+= -g2		# keep all debug info
 	#CFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 	#CFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
-	CFLAGS+= -O3
 	##	-target=wasm64-unknown-emscripten
 	#LDFLAGS+=- -no-debug -target=wasm64-unknown-emscripten -panic=trap -scheduler=none
 	#LDFLAGS+= --profiling-funcs
 	#LDFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 	#LDFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
+	CFLAGS+= -O3
 	LDFLAGS+= -O3
 	CFLAGS+= -fPIC
-	LDFLAGS+= -s EXPORT_ALL=1 # https://stackoverflow.com/a/33206957 ....  THIS IS NOT NEEDED TO EXPORT ALL TO WASM, BUT IT IS NEEDED TO EXPORT ALL TO JS !!!!! EMSCRIPTEN!!!!!
 	#LDFLAGS+= -s LINKABLE=1 -sEXPORT_ALL=1 # https://stackoverflow.com/a/33208675
+	LDFLAGS+= -s EXPORT_ALL=1 # https://stackoverflow.com/a/33206957 ....  THIS IS NOT NEEDED TO EXPORT ALL TO WASM, BUT IT IS NEEDED TO EXPORT ALL TO JS !!!!! EMSCRIPTEN!!!!!
 	LDFLAGS+= -s LINKABLE=1 # I need this to export **ANYTHING** but if I enable it then I can't also see malloc .. WHAT KIND OF STUPID IS AT PLAY HERE?! JUST WRITE _malloc TO Module LIKE YOU DO EVERYTHING ELSE!!!  OH WAIT, THE WARNING WAS LYING! DESPITE THE WARNING IT IN FACT DOES WRITE OUT _malloc, BUT WONT WITHOUT THE DEPRECATED VAR!
 	#LDFLAGS+= -s IGNORE_MISSING_MAIN=1 # ... isn't ignoring missing main ...
 	LDFLAGS+= --no-entry
@@ -122,8 +122,6 @@ LDFLAGS=
 	LDFLAGS+= -s TOTAL_MEMORY=512MB		# https://stackoverflow.com/questions/55884378/why-in-webassembly-does-allow-memory-growth-1-fail-while-total-memory-512mb-succ
 	LDFLAGS+= -s USE_ZLIB=1				# where is the symbols to this?!?! not being exported!!! wtf!!!
 	#LDFLAGS+= -s MEMORY64=1				# otherwise I'm getting the weird case that void*'s are 4bytes but structs-of-void*'s align to 8 bytes ...
-	#LDFLAGS+= -s 'EXPORT_NAME="lua"'		# HOW COME THIS IS NOT THE EXPORT NAME?!?!?! IT'S JUST THE INTERNAL VARIABLE NAME!!?!?!!!!!
-	#LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc", "_free", "_dlsym", "_dlopen"]'	# https://github.com/emscripten-core/emscripten/issues/6882#issuecomment-406745898
 	LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "ccall", "cwrap", "stringToNewUTF8", "addFunction"]'  # https://stackoverflow.com/a/64021522
 	#LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS", "cwrap", "allocate", "intArrayFromString"]'  # https://stackoverflow.com/a/64021522 https://github.com/emscripten-core/emscripten/issues/6061#issuecomment-357150650 and https://stackoverflow.com/a/46855162
 	# ... and absolutely none of these show up in the exports ...

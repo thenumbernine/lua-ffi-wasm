@@ -5,6 +5,7 @@
 		<script type='module' defer>
 		import {init} from './main.js';
 const M = await init();
+// await init doesn't finish for run() to finish ...
 window.M = M;
 console.log('M', M);
 console.log('M.FS', M.FS);
@@ -12,6 +13,7 @@ console.log('M.side', M.side);
 console.log('M._side', M._side);
 const handle = M._dlopen(0, 257)
 console.log('dlopen(NULL) results', handle);
+// run() code finally runs after this point.
 		</script>
 	</head>
 	<body>

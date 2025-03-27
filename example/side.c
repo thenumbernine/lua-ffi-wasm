@@ -1,3 +1,3 @@
-int side(int a) {
+extern int side(int a) {
     return a + 1;
 }

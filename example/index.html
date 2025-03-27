@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset='utf8'/>
+		<script type='module' defer>
+		import {init} from './main.js';
+const M = await init();
+window.M = M;
+console.log('M', M);
+console.log('M.FS', M.FS);
+// on one hand, no more wasmExport access
+// on the other hand, dlsym works, so I can find functions there ...
+//console.log('M.side', M.side);
+//console.log('M._side', M._side);
+		</script>
+	</head>
+	<body>
+	</body>
+</html>

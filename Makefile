@@ -100,12 +100,14 @@ LDFLAGS=
 	LDFLAGS+= -s MAIN_MODULE=1
 	LDFLAGS+= -s EXPORT_ALL=1
 	LDFLAGS+= -s FILESYSTEM=1
+	#LDFLAGS+= -s DEFAULT_TO_CXX=0		# if MAIN_MODULE/SIDE_MODULE isn't used then setting this to 0 will stop the _ underscore in front of C funciton names. fucking retarded.
 	LDFLAGS+= -s ALLOW_TABLE_GROWTH=1	# without it no dynamic stuff I guess?
 	LDFLAGS+= -s ALLOW_MEMORY_GROWTH=1	# otherwise my apps die after a few seconds
 	LDFLAGS+= -s TOTAL_MEMORY=512MB		# https://stackoverflow.com/questions/55884378/why-in-webassembly-does-allow-memory-growth-1-fail-while-total-memory-512mb-succ
 	#LDFLAGS+= -s USE_ZLIB=1				# where is the symbols to this?!?! not being exported!!! wtf!!!
 	#LDFLAGS+= -s MEMORY64=1				# otherwise I'm getting the weird case that void*'s are 4bytes but structs-of-void*'s align to 8 bytes ...
 	LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS"]'
+	LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc","_free"]'	# WHY ARE THESE NOW HIDDEN!?!?!? THEY ARENT HIDDEN IN THE EXAMPLE !?!?!?!?!!?!? WHAT'S THE DIFFERENT?!!?!?!??! IGNORE THE WARNING, THIS IS NECESSARY FOR IT TO WORK!
 
 
 
@@ -180,3 +182,4 @@ $(DIST): $(DIST_OBJS)
 	echo 'const defaultModule = (Module = {}) => new Promise((initResolve, initReject) => {' | cat - $(DIST) > temp && mv temp $(DIST)
 	echo 'addOnPostRun(() => { initResolve(Module); }); }); export default defaultModule;' >> $(DIST)
 	# TODO ALSO comment out var Module = line OR ELSE IT BREAKS because JAVASCRIPT IS TRASH
+	# ALSO make sure in updateMemoryViews() to assign HEAP* to Module.HEAP* because EMSCRIPTEN IS TRASH TOO (it did this before, but stopped doing it when i switched to MAIN_MODULE/SIDE_MODULE, which was necessary to access dlopen/dlsym from js)

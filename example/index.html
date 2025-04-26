@@ -2,19 +2,38 @@
 <html>
 	<head>
 		<meta charset='utf8'/>
-		<script type='module' defer>
-		import {init} from './main.js';
-const M = await init();
-// await init doesn't finish for run() to finish ...
-window.M = M;
+		<script>
+// this was a module, but I adopted this design https://stackoverflow.com/questions/62587188/how-to-properly-load-side-module-from-main-module-in-emscripten
+// so I wouldn't have to manually wrap the emcc js code in an export module, to help the order of events of running and finishing module loading ...
+// so i have to go back in time 20 years of javascript langauge standards just to get it to run ...
+// emscripten is such trash ... 
+Module = {
+	postRun : function() {
+const M = this;	
+window.M = M;	
+		M.callMain();
 console.log('M', M);
 console.log('M.FS', M.FS);
-console.log('M.side', M.side);
-console.log('M._side', M._side);
-const handle = M._dlopen(0, 257)
+
+// main exported functions work fine
+M._main_foo();
+
+// seems side modules don't get exported 
+console.log('M._side_foo', M._side_foo);
+
+console.log('M._dlopen', M._dlopen);
+const handle = M._dlopen(0, 257);
 console.log('dlopen(NULL) results', handle);
-// run() code finally runs after this point.
+const side_foo = M._dlsym(handle, M.stringToNewUTF8("side_foo"));
+console.log("side_foo", side_foo);
+// now do I need to call it?	
+	},
+};
+
+// and dlopen still doesn't work when called outside of C code. 
+
 		</script>
+		<script async src="main.js"></script>
 	</head>
 	<body>
 	</body>

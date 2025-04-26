@@ -92,9 +92,11 @@ LDFLAGS=
 	#LDFLAGS+= --profiling-funcs
 	#LDFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 	#LDFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
-	CFLAGS+= -O3
+	CFLAGS+= -O3		# needs O3 or it will error when trying to load the (complete empty but necessary to gain js access to dlopen/dlsym) side module wasm.
 	LDFLAGS+= -O3
 	CFLAGS+= -fPIC
+	#CFLAGS+= -s MEMORY64=1		# this will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
+	#LDFLAGS+= -s MEMORY64=1
 	CFLAGS+= -s MAIN_MODULE=1
 	LDFLAGS+= --no-entry
 	LDFLAGS+= -s MAIN_MODULE=1
@@ -183,3 +185,10 @@ $(DIST): $(DIST_OBJS)
 	echo 'addOnPostRun(() => { initResolve(Module); }); }); export default defaultModule;' >> $(DIST)
 	# TODO ALSO comment out var Module = line OR ELSE IT BREAKS because JAVASCRIPT IS TRASH
 	# ALSO make sure in updateMemoryViews() to assign HEAP* to Module.HEAP* because EMSCRIPTEN IS TRASH TOO (it did this before, but stopped doing it when i switched to MAIN_MODULE/SIDE_MODULE, which was necessary to access dlopen/dlsym from js)
+
+INSTALL_DIR=../../thenumbernine.github.io/js/
+.PHONY: install
+install: $(DIST)
+	cp __tmp_emscripten_sidemodule_empty.wasm $(INSTALL_DIR)
+	cp lua-5.4.7-with-ffi.wasm $(INSTALL_DIR)
+	cp lua-5.4.7-with-ffi.js $(INSTALL_DIR)

@@ -11,11 +11,11 @@ main.js:
 		-o side.o
 	emcc side.o -s SIDE_MODULE=1 -o side.wasm
 	emcc main.c \
-		-s INVOKE_RUN=0 \
+		--no-entry \
 		-s MAIN_MODULE=1 \
 		-s FILESYSTEM=1 \
 		-s EXPORT_ALL=1 \
-		-s 'EXPORTED_RUNTIME_METHODS=["FS","wasmExports","dlopenInternal","callMain"]' \
+		-s 'EXPORTED_RUNTIME_METHODS=["FS"]' \
 		side.wasm -o main.js
 
 run:

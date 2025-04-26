@@ -149,7 +149,6 @@ clean:
 
 
 # Lua 5.4.7
-
 LUA_SRCS = $(patsubst %, lua/%, \
 	lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c \
 	lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c \
@@ -157,14 +156,12 @@ LUA_SRCS = $(patsubst %, lua/%, \
 	lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c \
 	loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c \
 )
-
 LUA_OBJS = $(patsubst %.c, %$(O), $(LUA_SRCS))
 
 
 LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \
 	call.c ctype.c ffi.c parser.c \
 )
-
 LUAFFIFB_OBJS = $(patsubst %.c, %$(O), $(LUAFFIFB_SRCS))
 
 
@@ -177,15 +174,15 @@ GNUPLOT_SRCS = $(patsubst %, gnuplot/src/%, \
 	bf_test.c gplt_x11.c gpexecute.c getcolor.c checkdoc.c termdoc.c doc2ipf.c xref.c doc2tex.c termdoc.c doc2gih.c doc2rnh.c doc2hlp.c doc2rtf.c doc2ms.c \
 	termdoc.c doc2gih.c termdoc.c doc2html.c termdoc.c xref.c doc2web.c termdoc.c xref.c demo_plugin.c \
 )
-
 GNUPLOT_OBJS = $(patsubst %.c, %$(O), $(GNUPLOT_SRCS))
 
 
 # TODO compile lua to a main module 
 #  and compile luaffifb and gnuplot to separate side modules
 # ... why even have any specific main? lua to a lib as well?  why not only ever side modules?
-DIST_OBJS= $(LUA_OBJS) $(LUAFFIFB_OBJS) 
-	# $(GNUPLOT_OBJS)
+DIST_SRCS= $(LUA_SRCS) $(LUAFFIFB_SRCS) 
+	# $(GNUPLOT_SRCS)
+DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 	
 
 # compile rule for all:
@@ -193,11 +190,10 @@ DIST_OBJS= $(LUA_OBJS) $(LUAFFIFB_OBJS)
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 # final
-$(DIST): $(DIST_OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^
-	# import all from wasmExports to Module (so I don't have to deal with emscripten manually inserting those stupid underscores):
-	-rua -e "local p=path'$(DIST)' p:write((p:read():gsub(('createWasm();'):patescape(), 'createWasm(); for (let [k,v] of Object.entries(wasmExports)) { Module[k] = v; }')))"
-	# don't bother save local variables that are never used, i.e. lua_* functions:
-	-rua -e "local p=path'$(DIST)' p:write(p:read():split'\\n':filter([l] not l:match'^var _lua.*'):concat'\n')"
-	# can I strip out alll the module name crap?
-	-rua -e "local p=path'$(DIST)' p:write((p:read():gsub('Module..[^\\n]*.. = wasmExports', 'wasmExports')))"
+$(DIST): $(DIST_SRCS)
+	# idk what emscripten was thinking, but i need a SIDE_MODULE in order to use dlopen, even if nothing is in it...
+	emcc -c __tmp_emscripten_sidemodule_empty.c -s SIDE_MODULE=1 -o side.o
+	emcc __tmp_emscripten_sidemodule_empty.o -s SID_EMODULE=1 -o side.wasm
+	# and now I guess I compile everything at once.
+	$(CC) $(CFLAGS) __tmp_emscripten_sidemodule_empty.wasm -o $@ $^
+	# and now I'm stuck with shitty old pre-es6 javascript code

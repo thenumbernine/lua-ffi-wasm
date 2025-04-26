@@ -177,3 +177,5 @@ $(DIST): $(DIST_OBJS)
 	# and now I guess I compile everything at once.
 	$(CC) $(LDFLAGS) __tmp_emscripten_sidemodule_empty.wasm -o $@ $^
 	# and now I'm stuck with shitty old pre-es6 javascript code
+	echo 'const init = (Module) => new Promise((initResolve, initReject) => {' | cat - $(DIST) > temp && mv temp $(DIST)
+	echo 'addOnPostRun(() => { initResolve(Module); }); }); export {init};' >> $(DIST)

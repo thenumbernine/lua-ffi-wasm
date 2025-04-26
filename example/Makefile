@@ -16,6 +16,9 @@ main.js:
 		-s EXPORT_ALL=1 \
 		-s 'EXPORTED_RUNTIME_METHODS=["FS"]' \
 		side.wasm -o main.js main.o
+	# WHY THE FUCK DOES MODULARIZE AND ES6 NOT WORK , BUT I CAN WRAP A MODULE HERE JUST FINE, WHAT THE FUCK IS WRONG WITH EMSCRIPTEN
+	echo 'const init = (Module) => new Promise((initResolve, initReject) => {' | cat - main.js > temp && mv temp main.js
+	echo 'addOnPostRun(() => { initResolve(Module); }); }); export {init};' >> main.js
 
 run:
 	open http://localhost:8000/index.html

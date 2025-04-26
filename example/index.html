@@ -2,17 +2,16 @@
 <html>
 	<head>
 		<meta charset='utf8'/>
-		<script>
-// this was a module, but I adopted this design https://stackoverflow.com/questions/62587188/how-to-properly-load-side-module-from-main-module-in-emscripten
-// so I wouldn't have to manually wrap the emcc js code in an export module, to help the order of events of running and finishing module loading ...
-// so i have to go back in time 20 years of javascript langauge standards just to get it to run ...
-// emscripten is such trash ... 
-Module = {
-	postRun : function() {
-const M = this;	
-window.M = M;	
-		//M.callMain();
-		M._jsmain();
+		<script type='module' defer>
+// and dlopen still doesn't work when called outside of C code.
+
+import {init} from './main.js';
+
+const M = await init();
+window.M = M;
+
+//M.callMain();
+M._jsmain();
 console.log('M', M);
 console.log('M.FS', M.FS);
 console.log('M._malloc', M._malloc);
@@ -27,7 +26,7 @@ console.log('M._dlopen', M._dlopen);
 // so ... what's going on?
 M._main_foo();
 
-// seems side modules don't get exported 
+// seems side modules don't get exported
 console.log('M._side_foo', M._side_foo);
 
 const handle = M._dlopen(0, 257);
@@ -35,18 +34,12 @@ console.log('dlopen(NULL) results', handle);
 // funny that side_foo is found from dlopen(NULL) and not dlopen(side.whatever)
 const side_foo = M._dlsym(handle, M.stringToNewUTF8("side_foo"));
 console.log("side_foo", side_foo);
-// now do I need to call it?	
+// now do I need to call it?
 
 console.log('invoking side_foo ptr...');
 console.log(M._call_side_foo(side_foo, 42));
-console.log('done');	
-	},
-};
-
-// and dlopen still doesn't work when called outside of C code. 
-
+console.log('done');
 		</script>
-		<script async src="main.js"></script>
 	</head>
 	<body>
 	</body>

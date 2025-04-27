@@ -15,7 +15,7 @@ LDFLAGS=
 #	#CC=clang++
 #	O=.o	# .bc ?
 #	DIST=lua-5.4.7-with-ffi.wasm	# .bca ?
-#	
+#
 #	# wasi-libc I built myself .. still missingruntimes,
 #	#CFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/sysroot
 #	#LDFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/sysroot
@@ -26,7 +26,7 @@ LDFLAGS=
 #	#LDFLAGS+= --sysroot /usr/local/Cellar/wasi-runtimes/19.1.7/share/wasi-sysroot # can't find -lc -ldl etc ...
 #	# adding LDFLAGS also causes link errors of looking for some c++ abi
 #	# I suspect I shouldn't need to add either ... and that the wasi brew distribution is deficient?  or the brew configuration is messed up (since I'm export PATH this whole thing)
-#	
+#
 #	#CFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/build # why ask me for an install dir if you're just going to install to ./sysroot ?
 #	#CFLAGS+= --target=wasm32-wasi # works
 #	#CFLAGS+= --target=wasm64 # 'string.h' file not found
@@ -35,11 +35,11 @@ LDFLAGS=
 #	CFLAGS+= --target=wasm32-unknown-wasi # works
 #	LDFLAGS+= --target=wasm32-unknown-wasi
 #	CFLAGS+= -O2
-#	
+#
 #	# for signals:
 #	CFLAGS+= -D_WASI_EMULATED_SIGNAL
 #	LDFLAGS+= -lwasi-emulated-signal
-#	
+#
 #	# for longjmp ...
 #	CFLAGS+= -mllvm -wasm-enable-sjlj
 #	# .. alternatively just compile ldo as C++ ( everything as C++?) and Lua will use throw instead:
@@ -48,30 +48,30 @@ LDFLAGS=
 #	#CFLAGS+= -fno-exceptions # but I want to use exception based lua errors
 #	# but then I get link errors of `undefined symbol: __cxa_allocate_exception` so back to C...
 #	#CFLAGS+= "-DLUA_API=extern \"C\""	# without this the luaffifb can't see lua functions, cuz it expects lua's functions to be in C and not C++
-#	
+#
 #	# tmpfile() is deprecated & L_tmpnam are missing on wasi-libc, so I made this flag to tell Lua build to get around that, and use the LUA_USE_POSIX tmpfile option:
 #	CFLAGS+= -DLUA_TMPFILE_MISSING
-#	
+#
 #	# for clock() to work:
 #	CFLAGS+= -D_WASI_EMULATED_PROCESS_CLOCKS
 #	LDFLAGS+= -lwasi-emulated-process-clocks
-#	
+#
 #	# mmap:
 #	CFLAGS+= -D_WASI_EMULATED_MMAN
 #	LDFLAGS+= -lwasi-emulated-mman
-#	
+#
 #	# for luaffifb to tell the arch
 #	CFLAGS+= -D__WASM__
-#	
+#
 #	LDFLAGS+= -ldl	# dlopen/dlsym
-#	
+#
 #	# "Despite claiming to be ISO C, iOS does not implement 'system'."
 #	#CFLAGS+= -DLUA_USE_IOS
 #	# but if you enable this it causes lots more compile/link errors to pop up ... so ...
 #	CFLAGS+= -DLUA_MISSING_SYSTEM
-#	
+#
 #	LDFLAGS+= -Wl,--export-all	# where'd my symbols go?
-#	
+#
 #	# now for porting all those emscripten flags to clang flags (in emscripten's libexec/tools/building.py)
 #	LDFLAGS+= -Wl,--growable-table -Wl,--max-memory=2147483648
 
@@ -163,11 +163,10 @@ GNUPLOT_SRCS = $(patsubst %, gnuplot/src/%, \
 GNUPLOT_OBJS = $(patsubst %.c, %$(O), $(GNUPLOT_SRCS))
 
 
-# TODO compile lua to a main module 
+# TODO compile lua to a main module
 #  and compile luaffifb and gnuplot to separate side modules
 # ... why even have any specific main? lua to a lib as well?  why not only ever side modules?
-DIST_SRCS= $(LUA_SRCS) 
-	# $(LUAFFIFB_SRCS) 
+DIST_SRCS= $(LUA_SRCS) $(LUAFFIFB_SRCS)
 	# $(GNUPLOT_SRCS)
 DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 

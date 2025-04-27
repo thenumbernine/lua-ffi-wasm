@@ -92,11 +92,16 @@ LDFLAGS=
 	#LDFLAGS+= --profiling-funcs
 	#LDFLAGS+= -Oz		# https://stackoverflow.com/a/67809004
 	#LDFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
-	CFLAGS+= -O3		# needs O3 or it will error when trying to load the (complete empty but necessary to gain js access to dlopen/dlsym) side module wasm.
-	LDFLAGS+= -O3
+	#CFLAGS+= -O3		# needs O3 or it will error when trying to load the (complete empty but necessary to gain js access to dlopen/dlsym) side module wasm.
+	#LDFLAGS+= -O3
+	CFLAGS+= -O1
+	LDFLAGS+= -O1
+	#CFLAGS+= -O0		# for some reason -O0 tells the js module wasm loader to load twice in async, and the 2nd load complains that the first load isn't finished.....smh
+	#LDFLAGS+= -O0		#
 	#CFLAGS+= -fwasm-exceptions
 	#CFLAGS+= -x c++			# I only want this for Lua (right?)
 	CFLAGS+= -fPIC
+	#LDFLAGS+= -s WASM=0			# will this fix the lua coroutine resume memory out of bounds errors? ... 'WASM2JS is not compatible with relocatable output', so lets disable fPIC ... and it still cmoplains ... does WASM=0 not work with MAIN_MODULE/SIDE_MODULE?  what a fucking joke.
 	#CFLAGS+= -s MEMORY64=1		# this will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
 	#LDFLAGS+= -s MEMORY64=1
 	CFLAGS+= -s MAIN_MODULE=1
@@ -197,5 +202,5 @@ INSTALL_DIR=../../thenumbernine.github.io/js/
 .PHONY: install
 install: $(DIST)
 	cp __tmp_emscripten_sidemodule_empty.wasm $(INSTALL_DIR)
-	cp lua-5.4.7-with-ffi.wasm $(INSTALL_DIR)
-	cp lua-5.4.7-with-ffi.js $(INSTALL_DIR)
+	cp $(DIST) $(INSTALL_DIR)
+	cp $(DIST_WASM) $(INSTALL_DIR)

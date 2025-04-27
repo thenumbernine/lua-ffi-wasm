@@ -98,14 +98,14 @@ LDFLAGS=
 	LDFLAGS+= -O1
 	#CFLAGS+= -O0		# for some reason -O0 tells the js module wasm loader to load twice in async, and the 2nd load complains that the first load isn't finished.....smh
 	#LDFLAGS+= -O0		#
-	#CFLAGS+= -fwasm-exceptions
+	#CFLAGS+= -fwasm-exceptions	# gave me all sorts of "missing ___cxx_exception" problems
 	#CFLAGS+= -x c++			# I only want this for Lua (right?)
 	CFLAGS+= -fPIC
 	#LDFLAGS+= -s WASM=0			# will this fix the lua coroutine resume memory out of bounds errors? ... 'WASM2JS is not compatible with relocatable output', so lets disable fPIC ... and it still cmoplains ... does WASM=0 not work with MAIN_MODULE/SIDE_MODULE?  what a fucking joke.
-	#CFLAGS+= -s MEMORY64=1		# this will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
-	#LDFLAGS+= -s MEMORY64=1
-	CFLAGS+= -s MAIN_MODULE=1
+	CFLAGS+= -s MEMORY64=1			# this will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
+	LDFLAGS+= -s MEMORY64=1
 	LDFLAGS+= --no-entry
+	CFLAGS+= -s MAIN_MODULE=1
 	LDFLAGS+= -s MAIN_MODULE=1
 	LDFLAGS+= -s EXPORT_ALL=1
 	LDFLAGS+= -s FILESYSTEM=1
@@ -114,7 +114,6 @@ LDFLAGS=
 	LDFLAGS+= -s ALLOW_MEMORY_GROWTH=1	# otherwise my apps die after a few seconds
 	LDFLAGS+= -s TOTAL_MEMORY=512MB		# https://stackoverflow.com/questions/55884378/why-in-webassembly-does-allow-memory-growth-1-fail-while-total-memory-512mb-succ
 	#LDFLAGS+= -s USE_ZLIB=1				# where is the symbols to this?!?! not being exported!!! wtf!!!
-	#LDFLAGS+= -s MEMORY64=1				# otherwise I'm getting the weird case that void*'s are 4bytes but structs-of-void*'s align to 8 bytes ...
 	LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS"]'
 	LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc","_free"]'	# WHY ARE THESE NOW HIDDEN!?!?!? THEY ARENT HIDDEN IN THE EXAMPLE !?!?!?!?!!?!? WHAT'S THE DIFFERENT?!!?!?!??! IGNORE THE WARNING, THIS IS NECESSARY FOR IT TO WORK!
 
@@ -181,11 +180,7 @@ DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 
 # final
 $(DIST): $(DIST_OBJS)
-	# idk what emscripten was thinking, but i need a SIDE_MODULE in order to use dlopen, even if nothing is in it...
-	emcc -c __tmp_emscripten_sidemodule_empty.c -s SIDE_MODULE=1 -o __tmp_emscripten_sidemodule_empty.o
-	emcc __tmp_emscripten_sidemodule_empty.o -s SIDE_MODULE=1 -o __tmp_emscripten_sidemodule_empty.wasm
-	# and now I guess I compile everything at once.
-	$(CC) $(LDFLAGS) __tmp_emscripten_sidemodule_empty.wasm -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 	# and now I'm stuck with shitty old pre-es6 javascript code
 	# now comment out the module declaration because it uses 'var' which will screw up even if I wrap it all in a function with a `Module` arg
 	sed 's/^var Module/\/\/var Module/' $(DIST) > temp && mv temp $(DIST)
@@ -201,6 +196,5 @@ $(DIST): $(DIST_OBJS)
 INSTALL_DIR=../../thenumbernine.github.io/js/
 .PHONY: install
 install: $(DIST)
-	cp __tmp_emscripten_sidemodule_empty.wasm $(INSTALL_DIR)
 	cp $(DIST) $(INSTALL_DIR)
 	cp $(DIST_WASM) $(INSTALL_DIR)

@@ -79,7 +79,7 @@ LDFLAGS=
 
 
 ############ emcc final:
-	CC=emcc
+	CC=em++
 	O=.o	# .bc?
 	DIST=lua-5.4.7-with-ffi.js
 	DIST_WASM=lua-5.4.7-with-ffi.wasm
@@ -94,6 +94,8 @@ LDFLAGS=
 	#LDFLAGS+= -O2		# https://github.com/emscripten-core/emscripten/issues/13806#issuecomment-811995664
 	CFLAGS+= -O3		# needs O3 or it will error when trying to load the (complete empty but necessary to gain js access to dlopen/dlsym) side module wasm.
 	LDFLAGS+= -O3
+	#CFLAGS+= -fwasm-exceptions
+	#CFLAGS+= -x c++			# I only want this for Lua (right?)
 	CFLAGS+= -fPIC
 	#CFLAGS+= -s MEMORY64=1		# this will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
 	#LDFLAGS+= -s MEMORY64=1
@@ -109,7 +111,7 @@ LDFLAGS=
 	#LDFLAGS+= -s USE_ZLIB=1				# where is the symbols to this?!?! not being exported!!! wtf!!!
 	#LDFLAGS+= -s MEMORY64=1				# otherwise I'm getting the weird case that void*'s are 4bytes but structs-of-void*'s align to 8 bytes ...
 	LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS"]'
-	LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc","_free"]'	# WHY ARE THESE NOW HIDDEN!?!?!? THEY ARENT HIDDEN IN THE EXAMPLE !?!?!?!?!!?!? WHAT'S THE DIFFERENT?!!?!?!??! IGNORE THE WARNING, THIS IS NECESSARY FOR IT TO WORK!
+	LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc","_free","___cpp_exception"]'	# WHY ARE THESE NOW HIDDEN!?!?!? THEY ARENT HIDDEN IN THE EXAMPLE !?!?!?!?!!?!? WHAT'S THE DIFFERENT?!!?!?!??! IGNORE THE WARNING, THIS IS NECESSARY FOR IT TO WORK!
 
 
 
@@ -164,10 +166,20 @@ GNUPLOT_OBJS = $(patsubst %.c, %$(O), $(GNUPLOT_SRCS))
 # TODO compile lua to a main module 
 #  and compile luaffifb and gnuplot to separate side modules
 # ... why even have any specific main? lua to a lib as well?  why not only ever side modules?
-DIST_SRCS= $(LUA_SRCS) $(LUAFFIFB_SRCS) 
+DIST_SRCS= $(LUA_SRCS) 
+	# $(LUAFFIFB_SRCS) 
 	# $(GNUPLOT_SRCS)
 DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
-	
+
+
+# compile rule for Lua, tell it to use C++
+# I'd tell everything but luaffifb/ffi.c's complex stuff doesn't like it
+# andnnnndd now we know emscripten cannot mix c and c++ files.
+# make is kind of retarded isn't it?
+# tell Lua .c to compile as C++ (so I can get exceptions instead of longjmps)
+lua/%.o: lua/%.c
+	$(CC) $(CFLAGS) -x c++ -c -o $@ $^
+#  -D "LUA_API=extern \"C\""
 
 # compile rule for all:
 %.o: %.c
@@ -176,10 +188,11 @@ DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 # final
 $(DIST): $(DIST_OBJS)
 	# idk what emscripten was thinking, but i need a SIDE_MODULE in order to use dlopen, even if nothing is in it...
-	emcc -c __tmp_emscripten_sidemodule_empty.c -s SIDE_MODULE=1 -o __tmp_emscripten_sidemodule_empty.o
-	emcc __tmp_emscripten_sidemodule_empty.o -s SIDE_MODULE=1 -o __tmp_emscripten_sidemodule_empty.wasm
+	em++ -c __tmp_emscripten_sidemodule_empty.cpp -s SIDE_MODULE=1 -o __tmp_emscripten_sidemodule_empty.o
+	em++ __tmp_emscripten_sidemodule_empty.o -s SIDE_MODULE=1 -o __tmp_emscripten_sidemodule_empty.wasm
 	# and now I guess I compile everything at once.
-	$(CC) $(LDFLAGS) __tmp_emscripten_sidemodule_empty.wasm -o $@ $^
+	em++ -c __tmp_emscripten_sidemodule_empty.cpp -s MAIN_MODULE=1 -o __tmp_emscripten_mainmodule_empty.o
+	$(CC) $(LDFLAGS) __tmp_emscripten_sidemodule_empty.wasm -o $@ __tmp_emscripten_mainmodule_empty.o $^
 	# and now I'm stuck with shitty old pre-es6 javascript code
 	echo 'const defaultModule = (Module = {}) => new Promise((initResolve, initReject) => {' | cat - $(DIST) > temp && mv temp $(DIST)
 	echo 'addOnPostRun(() => { initResolve(Module); }); }); export default defaultModule;' >> $(DIST)

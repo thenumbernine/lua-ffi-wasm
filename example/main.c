@@ -6,6 +6,8 @@ void main_foo() {
 }
 typedef void (*pfn_main_foo)();
 
+int static_link_to_main();
+
 typedef int (*pfn_side_foo)(int a);
 void jsmain() {
 	{
@@ -29,6 +31,8 @@ void jsmain() {
 		int side_foo(int a);
 printf("hello world %d\n", side_foo(1));
 	}
+	
+	static_link_to_main();
 }
 
 int call_side_foo(pfn_side_foo p, int x) {

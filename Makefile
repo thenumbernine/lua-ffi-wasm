@@ -117,10 +117,17 @@ LDFLAGS=
 	#LDFLAGS+= -s DEFAULT_TO_CXX=0		# if MAIN_MODULE/SIDE_MODULE isn't used then setting this to 0 will stop the _ underscore in front of C funciton names. fucking retarded.
 	LDFLAGS+= -s ALLOW_TABLE_GROWTH=1	# need this for adding functions at runtime
 	LDFLAGS+= -s ALLOW_MEMORY_GROWTH=1	# otherwise my apps die after a few seconds ... I suspect whenever memory grows, something gets invalidated and my next lua coroutine resume errors with "memory out of bounds"
-	LDFLAGS+= -s INITIAL_MEMORY=2147483648
-	#LDFLAGS+= -s INITIAL_HEAP=1073741824	# can't do this because nonsense
-	LDFLAGS+= -s STACK_SIZE=1048576			# default is 64k
-	#LDFLAGS+= -s USE_ZLIB=1				# where is the symbols to this?!?! not being exported!!! wtf!!!
+	LDFLAGS+= -s INITIAL_MEMORY=3900mb
+	#LDFLAGS+= -s INITIAL_HEAP=1gb		# can't do this because nonsense
+	LDFLAGS+= -s STACK_SIZE=5mb				# default is 64kb
+	CFLAGS+= -s USE_ZLIB=1
+	LDFLAGS+= -s USE_ZLIB=1
+	CFLAGS+= -s USE_LIBPNG=1
+	LDFLAGS+= -s USE_LIBPNG=1
+	CFLAGS+= -s USE_LIBJPEG=1
+	LDFLAGS+= -s USE_LIBJPEG=1
+	CFLAGS+= -s USE_SDL=2
+	LDFLAGS+= -s USE_SDL=2
 	LDFLAGS+= -s ENVIRONMENT="web"
 	#LDFLAGS+= -s WASM_ASYNC_COMPILATION=0	# js init complains if I disable this 
 	#LDFLAGS+= -s ERROR_ON_UNDEFINED_SYMBOLS=0	# because emscripten wants some internal function __syscall_mprotect but it's internal to emscripten so it just errors for no fucking reason
@@ -128,9 +135,16 @@ LDFLAGS=
 	LDFLAGS+= -s EXPORTED_FUNCTIONS="[ \
 		'_malloc', \
 		'_free', \
+		'_strlen', \
+		'_strerror', \
 		'_dlopen', \
 		'_dlsym', \
 		'_realloc', \
+		'_fopen', \
+		'_fclose', \
+		'_fread', \
+		'_gettimeofday', \
+		'_SDL_Init', \
 		'_luaL_checkversion_', \
 		'_luaL_getmetafield', \
 		'_luaL_callmeta', \
@@ -312,6 +326,14 @@ LUA_SRCS = $(patsubst %, lua/%, \
 )
 LUA_OBJS = $(patsubst %.c, %$(O), $(LUA_SRCS))
 
+# looks like LUAFFIFB still uses JIT for the calling
+# how to get around it?
+# use libffi for the calling.
+# and luckily, in the last year, libffi has added emscripten-wasm support itself.
+LIBFFI_SRCS = $(patsubst %, libffi/src/wasm32/%, \
+	ffi.c \
+)
+LIBFFI_OBJS = $(patsubst %.c, %$(O), $(LIBFFI_SRCS))
 
 LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \
 	call.c ctype.c ffi.c parser.c \
@@ -334,7 +356,9 @@ GNUPLOT_OBJS = $(patsubst %.c, %$(O), $(GNUPLOT_SRCS))
 # TODO compile lua to a main module
 #  and compile luaffifb and gnuplot to separate side modules
 # ... why even have any specific main? lua to a lib as well?  why not only ever side modules?
-DIST_SRCS= $(LUA_SRCS) $(LUAFFIFB_SRCS)
+DIST_SRCS= $(LUA_SRCS) \
+	$(LIBFFI_SRCS) \
+	$(LUAFFIFB_SRCS)
 	# $(GNUPLOT_SRCS)
 DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 
@@ -345,7 +369,6 @@ DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 # final
 $(DIST): $(DIST_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^
-	# and now I'm stuck with shitty old pre-es6 javascript code
 	# now comment out the module declaration because it uses 'var' which will screw up even if I wrap it all in a function with a `Module` arg
 	#sed 's/^var Module/\/\/var Module/' $(DIST) > temp && mv temp $(DIST)
 	# now assign HEAP ... which it does already when I don't use MAIN_MODULE/SIDE_MODULE, so why did it stop when I started using MAIN_MODULE/SIDE_MODULE ?

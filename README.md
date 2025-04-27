@@ -38,6 +38,12 @@ What else I tried before I came to this option:
 - Other contenders?
 	- https://github.com/Doridian/LuaJS
 
+# LIBFFI
+
+I am using luaffifb, but it invokes calls with JIT, which I'm avoding / can't do courtesy of WASM target.  My fix, to use LibFFI with luaffifb.
+
+Configuring: `cd libffi && ./autogen.sh && cd src/wasm32 && emconfigure ../../configure`
+
 # MAKEFILE TODO:
 
 - outputting pure wasm.  I'm outptting js+wasm now because this seems to be the only way to get emscripten's virtual filesystem.  switching to wasm output makes FS go away.

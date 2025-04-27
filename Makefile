@@ -129,7 +129,7 @@ LDFLAGS=
 	CFLAGS+= -s USE_SDL=2
 	LDFLAGS+= -s USE_SDL=2
 	LDFLAGS+= -s ENVIRONMENT="web"
-	#LDFLAGS+= -s WASM_ASYNC_COMPILATION=0	# js init complains if I disable this 
+	#LDFLAGS+= -s WASM_ASYNC_COMPILATION=0	# js init complains if I disable this
 	#LDFLAGS+= -s ERROR_ON_UNDEFINED_SYMBOLS=0	# because emscripten wants some internal function __syscall_mprotect but it's internal to emscripten so it just errors for no fucking reason
 	LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS","stringToNewUTF8","addFunction"]'
 	LDFLAGS+= -s EXPORTED_FUNCTIONS="[ \
@@ -308,12 +308,12 @@ LDFLAGS=
 
 
 
-.PHONY: all clean
+.PHONY: all
 all: $(DIST)
 
+.PHONY: clean
 clean:
 	-rm $(DIST_OBJS) $(DIST)
-
 
 
 # Lua 5.4.7
@@ -326,14 +326,22 @@ LUA_SRCS = $(patsubst %, lua/%, \
 )
 LUA_OBJS = $(patsubst %.c, %$(O), $(LUA_SRCS))
 
-# looks like LUAFFIFB still uses JIT for the calling
-# how to get around it?
-# use libffi for the calling.
-# and luckily, in the last year, libffi has added emscripten-wasm support itself.
-LIBFFI_SRCS = $(patsubst %, libffi/src/wasm32/%, \
-	ffi.c \
+
+# libffi has its own emscripten configure and build
+# but what it spits out isn't "relocatable" i.e. I can't just link it below
+# so here's what I found in the libffi/src/wasm32/Makefile:
+LIBFFI_SRCS = $(patsubst %, libffi/%, \
+	src/prep_cif.c \
+	src/types.c \
+	src/raw_api.c \
+	src/java_raw_api.c \
+	src/closures.c \
+	src/tramp.c \
+	src/debug.c \
+	src/wasm32/ffi.c \
 )
 LIBFFI_OBJS = $(patsubst %.c, %$(O), $(LIBFFI_SRCS))
+
 
 LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \
 	call.c ctype.c ffi.c parser.c \
@@ -362,9 +370,15 @@ DIST_SRCS= $(LUA_SRCS) \
 	# $(GNUPLOT_SRCS)
 DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 
+
+# compile rule for libffi, which needs some extra includes...
+libffi/%.o: libffi/%.c
+	$(CC) $(CFLAGS) -c -I libffi/include -I libffi/src/wasm32 -I libffi/src/wasm32/include/ -o $@ $^
+
 # compile rule for all:
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $^
+
 
 # final
 $(DIST): $(DIST_OBJS)

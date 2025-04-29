@@ -344,7 +344,7 @@ LIBFFI_OBJS = $(patsubst %.c, %$(O), $(LIBFFI_SRCS))
 
 
 LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \
-	call.c ctype.c ffi.c parser.c \
+	call.c ctype.c ffi.c ffi_complex.c lua.c parser.c \
 )
 LUAFFIFB_OBJS = $(patsubst %.c, %$(O), $(LUAFFIFB_SRCS))
 
@@ -373,7 +373,30 @@ DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 
 # compile rule for libffi, which needs some extra includes...
 libffi/%.o: libffi/%.c
-	$(CC) $(CFLAGS) -c -I libffi/include -I libffi/src/wasm32 -I libffi/src/wasm32/include/ -o $@ $^
+	# ok there's libffi/src/wasm32/ffitarget.h that comes with libffi
+	# and there's libffi/src/wasm32/include/ffitarget.h that is generated from `emconfigure autoreconf -v -i && cd src/wasm32 && emconfigure ../../configure`
+	# and the dynamically generated one should be more legit right? after all, we have to dynamically generate the ffi.h because it's just not there to begin with
+	# and neither is good.
+	# the generated libffi/src/wasm32/include/ffitarget.h has complex support but not extra fields, which makes the libffi code fail to compile.
+	# the builtin libffi/src/wasm32/ffitarget.h has extra ffi_cif fields defined but no complex support, which makes the luaffifb code fail to link.
+	# looks like I will be generating it by hand ...
+	# 1) copy libffi/src/wasm32/ffitarget.h libffi/src/wasm32/include/ffitarget.h
+	# 2) add the line tot he top: `#define FFI_TARGET_HAS_COMPLEX_TYPE`
+	# 3) now libffi/src/wasm32/include/ has the good ffi.h and ffitarget.h
+	$(CC) $(CFLAGS) -c \
+		-I libffi/src/wasm32/include/ \
+		-I libffi/src/wasm32 \
+		-I libffi/include \
+		-o $@ $^
+
+# compile rule for luaffifb:
+# make sure you have generated libffi's ffi.h for wasm already, as per README.md says
+luaffifb/%.o: luaffifb/%.c
+	# make sure the include dir order matches libffi/ above, in order to use the same ffitarget.h
+	$(CC) $(CFLAGS) -c \
+		-I libffi/src/wasm32/include \
+		-I libffi/src/wasm32 \
+		-DCALL_WITH_LIBFFI -o $@ $^
 
 # compile rule for all:
 %.o: %.c

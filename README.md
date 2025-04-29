@@ -42,15 +42,34 @@ What else I tried before I came to this option:
 
 I am using luaffifb, but it invokes calls with JIT, which I'm avoding / can't do courtesy of WASM target.  My fix, to use LibFFI with luaffifb.
 
-Configuring: `cd libffi && ./autogen.sh && cd src/wasm32 && emconfigure ../../configure`
+Configuring:
+```
+cd libffi
+emconfigure autoreconf -v -i
+cd src/wasm32
+emconfigure ../../configure
+```
+
+J/k that's not enough, the `ffitarget.h` that is generated is bad, it is missing the `FFI_EXTRA_CIF_FIELDS` that should go in there, and for some reason mine has a whole bunch of `ifdef (arch)` stuff that has no bearing on emscripten.
+So now we just copy the packaged `ffitarget.h` over it.
+
+```
+cp ffitarget.h include/
+```
+
+And then we add our complex upport macro, cuz the generated one had that, but the builtin one didn't, idk why..
+
+```
+echo '#define FFI_TARGET_HAS_COMPLEX_TYPE' >> include/ffitarget.h
+```
 
 # MAKEFILE TODO:
 
 - outputting pure wasm.  I'm outptting js+wasm now because this seems to be the only way to get emscripten's virtual filesystem.  switching to wasm output makes FS go away.
 - dlsym doesn't work, so no functions in `ffi.cdef` work
-- replace the lua webgl-gles3 layer with a C one and use luaffi to link to it.  this has a few pain points: 
+- replace the lua webgl-gles3 layer with a C one and use luaffi to link to it.  this has a few pain points:
 	1) I don't think I've got ffi to dlsym into anything.  I don't think I've seen emscripten's dlsym work whatsoever, it only ever returns 0's, even for functions that are there and are exported and are being used.
-	2) emscripten has its own binding layer, but when I enable `FULL_ES3` and export, say, `glEnable`, it gives me back JS code - not wasm code with a symbol.  
+	2) emscripten has its own binding layer, but when I enable `FULL_ES3` and export, say, `glEnable`, it gives me back JS code - not wasm code with a symbol.
 		- Maybe this is because I'm outputting JS+WASM, and that means I have to switch back to pure-WASM
 - same with emscripten's ZLIB layer, but when I set `USE_ZLIB` I still don't see any zlib symbols...
 - same with emscripten's SDL layer

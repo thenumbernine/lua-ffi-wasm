@@ -105,8 +105,8 @@ LDFLAGS=
 	#CFLAGS+= -s MEMORY64=1			# this will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
 	#LDFLAGS+= -s MEMORY64=1
 	LDFLAGS+= --no-entry
-	CFLAGS+= -s MAIN_MODULE=2		# I need this to use dlopen/dlsym
-	LDFLAGS+= -s MAIN_MODULE=2
+	CFLAGS+= -s MAIN_MODULE=1		# I need this to use dlopen/dlsym
+	LDFLAGS+= -s MAIN_MODULE=1
 	LDFLAGS+= -s MODULARIZE=1
 	#CFLAGS+= -s STRICT=1			# setting STRICT makes emscripten (only with MAIN_MODULE?) request some mystery function __syscall_mprotect which isn't there, and telling it to ignore itself just gets more memory errors at runtime
 	#LDFLAGS+= -s STRICT=1
@@ -132,170 +132,6 @@ LDFLAGS=
 	#LDFLAGS+= -s WASM_ASYNC_COMPILATION=0	# js init complains if I disable this
 	#LDFLAGS+= -s ERROR_ON_UNDEFINED_SYMBOLS=0	# because emscripten wants some internal function __syscall_mprotect but it's internal to emscripten so it just errors for no fucking reason
 	LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS","stringToNewUTF8","addFunction"]'
-	LDFLAGS+= -s EXPORTED_FUNCTIONS="[ \
-		'_malloc', \
-		'_free', \
-		'_strlen', \
-		'_strerror', \
-		'_dlopen', \
-		'_dlsym', \
-		'_realloc', \
-		'_fopen', \
-		'_fclose', \
-		'_fread', \
-		'_gettimeofday', \
-		'_SDL_Init', \
-		'_luaL_checkversion_', \
-		'_luaL_getmetafield', \
-		'_luaL_callmeta', \
-		'_luaL_tolstring', \
-		'_luaL_argerror', \
-		'_luaL_typeerror', \
-		'_luaL_checklstring', \
-		'_luaL_optlstring', \
-		'_luaL_checknumber', \
-		'_luaL_optnumber', \
-		'_luaL_checkinteger', \
-		'_luaL_optinteger', \
-		'_luaL_checkstack', \
-		'_luaL_checktype', \
-		'_luaL_checkany', \
-		'_luaL_newmetatable', \
-		'_luaL_setmetatable', \
-		'_luaL_testudata', \
-		'_luaL_checkudata', \
-		'_luaL_where', \
-		'_luaL_fileresult', \
-		'_luaL_execresult', \
-		'_luaL_ref', \
-		'_luaL_unref', \
-		'_luaL_loadfilex', \
-		'_luaL_loadbufferx', \
-		'_luaL_loadstring', \
-		'_luaL_newstate', \
-		'_luaL_len', \
-		'_luaL_addgsub', \
-		'_luaL_gsub', \
-		'_luaL_setfuncs', \
-		'_luaL_getsubtable', \
-		'_luaL_traceback', \
-		'_luaL_requiref', \
-		'_luaL_buffinit', \
-		'_luaL_prepbuffsize', \
-		'_luaL_addlstring', \
-		'_luaL_addstring', \
-		'_luaL_addvalue', \
-		'_luaL_pushresult', \
-		'_luaL_pushresultsize', \
-		'_luaL_buffinitsize', \
-		'_luaL_error', \
-		'_lua_newstate', \
-		'_lua_close', \
-		'_lua_newthread', \
-		'_lua_resetthread', \
-		'_lua_atpanic', \
-		'_lua_version', \
-		'_lua_absindex', \
-		'_lua_gettop', \
-		'_lua_settop', \
-		'_lua_pushvalue', \
-		'_lua_rotate', \
-		'_lua_copy', \
-		'_lua_checkstack', \
-		'_lua_xmove', \
-		'_lua_isnumber', \
-		'_lua_isstring', \
-		'_lua_iscfunction', \
-		'_lua_isinteger', \
-		'_lua_isuserdata', \
-		'_lua_type', \
-		'_lua_typename', \
-		'_lua_tonumberx', \
-		'_lua_tointegerx', \
-		'_lua_toboolean', \
-		'_lua_tolstring', \
-		'_lua_rawlen', \
-		'_lua_tocfunction', \
-		'_lua_touserdata', \
-		'_lua_tothread', \
-		'_lua_topointer', \
-		'_lua_arith', \
-		'_lua_rawequal', \
-		'_lua_compare', \
-		'_lua_pushnil', \
-		'_lua_pushnumber', \
-		'_lua_pushinteger', \
-		'_lua_pushlstring', \
-		'_lua_pushstring', \
-		'_lua_pushcclosure', \
-		'_lua_pushboolean', \
-		'_lua_pushlightuserdata', \
-		'_lua_pushthread', \
-		'_lua_getglobal', \
-		'_lua_gettable', \
-		'_lua_getfield', \
-		'_lua_geti', \
-		'_lua_rawget', \
-		'_lua_rawgeti', \
-		'_lua_rawgetp', \
-		'_lua_createtable', \
-		'_lua_newuserdatauv', \
-		'_lua_getmetatable', \
-		'_lua_getiuservalue', \
-		'_lua_setglobal', \
-		'_lua_settable', \
-		'_lua_setfield', \
-		'_lua_seti', \
-		'_lua_rawset', \
-		'_lua_rawseti', \
-		'_lua_rawsetp', \
-		'_lua_setmetatable', \
-		'_lua_setiuservalue', \
-		'_lua_callk', \
-		'_lua_pcallk', \
-		'_lua_load', \
-		'_lua_dump', \
-		'_lua_yieldk', \
-		'_lua_resume', \
-		'_lua_status', \
-		'_lua_isyieldable', \
-		'_lua_setwarnf', \
-		'_lua_warning', \
-		'_lua_error', \
-		'_lua_next', \
-		'_lua_concat', \
-		'_lua_len', \
-		'_lua_stringtonumber', \
-		'_lua_getallocf', \
-		'_lua_setallocf', \
-		'_lua_toclose', \
-		'_lua_closeslot', \
-		'_lua_getstack', \
-		'_lua_getinfo', \
-		'_lua_getlocal', \
-		'_lua_setlocal', \
-		'_lua_getupvalue', \
-		'_lua_setupvalue', \
-		'_lua_upvalueid', \
-		'_lua_upvaluejoin', \
-		'_lua_sethook', \
-		'_lua_gethook', \
-		'_lua_gethookmask', \
-		'_lua_gethookcount', \
-		'_lua_setcstacklimit', \
-		'_luaopen_base', \
-		'_luaopen_coroutine', \
-		'_luaopen_table', \
-		'_luaopen_io', \
-		'_luaopen_os', \
-		'_luaopen_string', \
-		'_luaopen_utf8', \
-		'_luaopen_math', \
-		'_luaopen_debug', \
-		'_luaopen_package', \
-		'_luaL_openlibs', \
-		'_luaopen_ffi' \
-	    ]"
 
 
 ############ native arch testing:
@@ -372,17 +208,19 @@ DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 
 
 # compile rule for libffi, which needs some extra includes...
+#
+# ok there's libffi/src/wasm32/ffitarget.h that comes with libffi
+# and there's libffi/src/wasm32/include/ffitarget.h that is generated from `emconfigure autoreconf -v -i && cd src/wasm32 && emconfigure ../../configure`
+# and the dynamically generated one should be more legit right? after all, we have to dynamically generate the ffi.h because it's just not there to begin with
+# and neither is good.
+# the generated libffi/src/wasm32/include/ffitarget.h has complex support but not extra fields, which makes the libffi code fail to compile.
+# the builtin libffi/src/wasm32/ffitarget.h has extra ffi_cif fields defined but no complex support, which makes the luaffifb code fail to link.
+# looks like I will be generating it by hand ...
+# 1) copy libffi/src/wasm32/ffitarget.h libffi/src/wasm32/include/ffitarget.h
+# 2) add the line tot he top: `#define FFI_TARGET_HAS_COMPLEX_TYPE`
+# 3) now libffi/src/wasm32/include/ has the good ffi.h and ffitarget.h
+#
 libffi/%.o: libffi/%.c
-	# ok there's libffi/src/wasm32/ffitarget.h that comes with libffi
-	# and there's libffi/src/wasm32/include/ffitarget.h that is generated from `emconfigure autoreconf -v -i && cd src/wasm32 && emconfigure ../../configure`
-	# and the dynamically generated one should be more legit right? after all, we have to dynamically generate the ffi.h because it's just not there to begin with
-	# and neither is good.
-	# the generated libffi/src/wasm32/include/ffitarget.h has complex support but not extra fields, which makes the libffi code fail to compile.
-	# the builtin libffi/src/wasm32/ffitarget.h has extra ffi_cif fields defined but no complex support, which makes the luaffifb code fail to link.
-	# looks like I will be generating it by hand ...
-	# 1) copy libffi/src/wasm32/ffitarget.h libffi/src/wasm32/include/ffitarget.h
-	# 2) add the line tot he top: `#define FFI_TARGET_HAS_COMPLEX_TYPE`
-	# 3) now libffi/src/wasm32/include/ has the good ffi.h and ffitarget.h
 	$(CC) $(CFLAGS) -c \
 		-I libffi/src/wasm32/include/ \
 		-I libffi/src/wasm32 \
@@ -391,8 +229,8 @@ libffi/%.o: libffi/%.c
 
 # compile rule for luaffifb:
 # make sure you have generated libffi's ffi.h for wasm already, as per README.md says
+# make sure the include dir order matches libffi/ above, in order to use the same ffitarget.h
 luaffifb/%.o: luaffifb/%.c
-	# make sure the include dir order matches libffi/ above, in order to use the same ffitarget.h
 	$(CC) $(CFLAGS) -c \
 		-I libffi/src/wasm32/include \
 		-I libffi/src/wasm32 \

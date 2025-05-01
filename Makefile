@@ -120,6 +120,9 @@ LDFLAGS=
 	LDFLAGS+= -s INITIAL_MEMORY=3900mb
 	#LDFLAGS+= -s INITIAL_HEAP=1gb		# can't do this because nonsense
 	LDFLAGS+= -s STACK_SIZE=5mb				# default is 64kb
+	LDFLAGS+= -s MIN_WEBGL_VERSION=2
+	LDFLAGS+= -s MAX_WEBGL_VERSION=2
+	LDFLAGS+= -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1	# idk, seems even tho the main draw of emscripten is gles<->webgl + sdl + c++ programming, seems the webgl version of things is pretty shitty
 	CFLAGS+= -s USE_ZLIB=1
 	LDFLAGS+= -s USE_ZLIB=1
 	CFLAGS+= -s USE_LIBPNG=1
@@ -221,20 +224,13 @@ DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 # 3) now libffi/src/wasm32/include/ has the good ffi.h and ffitarget.h
 #
 libffi/%.o: libffi/%.c
-	$(CC) $(CFLAGS) -c \
-		-I libffi/src/wasm32/include/ \
-		-I libffi/src/wasm32 \
-		-I libffi/include \
-		-o $@ $^
+	$(CC) $(CFLAGS) -c -I libffi/src/wasm32/include/ -I libffi/src/wasm32 -I libffi/include -o $@ $^
 
 # compile rule for luaffifb:
 # make sure you have generated libffi's ffi.h for wasm already, as per README.md says
 # make sure the include dir order matches libffi/ above, in order to use the same ffitarget.h
 luaffifb/%.o: luaffifb/%.c
-	$(CC) $(CFLAGS) -c \
-		-I libffi/src/wasm32/include \
-		-I libffi/src/wasm32 \
-		-DCALL_WITH_LIBFFI -o $@ $^
+	$(CC) $(CFLAGS) -c -I libffi/src/wasm32/include -I libffi/src/wasm32 -DCALL_WITH_LIBFFI -o $@ $^
 
 # compile rule for all:
 %.o: %.c

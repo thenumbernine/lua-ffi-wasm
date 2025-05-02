@@ -145,7 +145,7 @@ TODO:
 
 - *Converting Lua integers to JS: If the value is finite and within `MAX_SAFE_INTEGER` then a `number` will be used, otherwise a `BigInt` will be used.
 - **Converting JS BigInts to Lua: BigInt is supposed to be arbitrary-precision, so it deserves a proper library like [LibBF](https://bellard.org/libbf/) or [GMP](https://gmplib.org/) or something.  In the mean time I'll just save them as Lua-integers, which under this build seem to be 64bit.
-	BigInts converted to Lua will get truncated to ... (checks) 32 bits.  Wait a second, why does Emscripten convert the `lua_Integer` to `BigInt` and other `int` indexes to `number`, when the underlying compiled code truncates those `BigInt`s to 32-bit and the `int`s to 53 bits ... 🤦🤦🤦.  I will try to rebuild in Wasm64 but that will throw BigInts everywhere in the Lua API.  But LibFFI only has wasm32 support, so that is limiting us at the moment.
+	BigInts converted to Lua will get truncated to Lua's internal `lua_Integer` type.  That seems to be `int64` at the moment.
 - String conversion between JS and Lua is with Emscripten's `stringToNewUTF8` / `UTF8ToString`.
 - Lua tables are exposed to JS using a `Proxy` object. These `Proxy` objects support reading and writing fields.
 	- Keys are as-is.  I don't +1 -1 to make the indexes of one match the environment/language of the other.  Maybe I will write some kind of Array wrapper in each Lua and JS environment for this interoperability.  Maybe `isArrow` will become a collection of serialization arguments.

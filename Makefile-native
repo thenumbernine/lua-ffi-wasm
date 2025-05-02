@@ -1,0 +1,41 @@
+include Files.mk
+
+############ native arch testing:
+CC=clang
+O=.o
+DIST=lua.out	# because 'lua' is a submodule - name in the dir is already used
+CFLAGS+= -O2 -fPIC
+LUA_SRCS+= lua/lua.c
+
+# my libffi branch is configured for wasm32 so here I am using the builtin.
+LDFLAGS+= -lffi
+
+#CFLAGS+= -DLUA_USE_LINUX
+CFLAGS+= -DLUA_USE_MACOSX
+#CFLAGS+= -DLUA_USE_IOS
+#CFLAGS+= -DLUA_USE_WINDOWS
+
+# Same in both, maybe I'll consolidate:
+
+.PHONY: all
+all: $(DIST)
+
+.PHONY: clean
+clean:
+	-rm $(DIST_OBJS) $(DIST)
+
+luaffifb/%.o: luaffifb/%.c
+	$(CC) $(CFLAGS) -c -I lua/ -I libffi/src/wasm32/include -I libffi/src/wasm32 -DCALL_WITH_LIBFFI -o $@ $^
+
+lua/%.o: lua/%.c
+	$(CC) $(CFLAGS) -c -DLUA_COMPAT_5_3 -I lua/ -o $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $^
+
+$(DIST): $(DIST_OBJS)
+	$(CC) $(LDFLAGS) -o $@ $^
+
+.PHONY: distclean
+distclean:
+	-rm $(DIST)

@@ -1,10 +1,26 @@
 # I thought github.com/lua/lua would be ... lua ... but, welp, the Makefiles are missing
 # I'm too lazy to hunt down wherever the Makefile are developed, so here's my lazy copy:
 
-CFLAGS= -Wall -Wextra -DLUA_COMPAT_5_3 -I lua/
-#CFLAGS+=  -std=gnu99
-LDFLAGS=
+include Files.mk
 
+
+# libffi has its own emscripten configure and build
+# but what it spits out isn't "relocatable" i.e. I can't just link it below
+# so here's what I found in the libffi/src/wasm32/Makefile:
+LIBFFI_SRCS = $(patsubst %, libffi/%, \
+	src/prep_cif.c \
+	src/types.c \
+	src/raw_api.c \
+	src/java_raw_api.c \
+	src/closures.c \
+	src/tramp.c \
+	src/debug.c \
+	src/wasm32/ffi.c \
+)
+LIBFFI_OBJS = $(patsubst %.c, %$(O), $(LIBFFI_SRCS))
+
+# how does evaluation work
+DIST_SRCS+= $(LIBFFI_SRCS)
 
 
 
@@ -138,15 +154,6 @@ LDFLAGS=
 	LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc","_free"]'		# is it absolutely random which functions emscripten chooses to export when you say EXPORT_ALL?  I have to still  manually specify these.  It will warn me that I don't since I already said EXPORT_ALL.  But EXPORT_ALL missed these.  And manually specifying them reminds emscripten to include them along with whatever is its idea of "all".
 
 
-############ native arch testing:
-#	CC=clang
-#	O=.o
-#	DIST=lua.out	# because 'lua' is a submodule - name in the dir is already used
-#	CFLAGS+= -O2 -fPIC
-#	LUA_SRCS+= lua/lua.c
-
-
-
 
 .PHONY: all
 all: $(DIST)
@@ -154,61 +161,6 @@ all: $(DIST)
 .PHONY: clean
 clean:
 	-rm $(DIST_OBJS) $(DIST)
-
-
-# Lua 5.4.7
-LUA_SRCS = $(patsubst %, lua/%, \
-	lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c \
-	lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c \
-	lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c \
-	lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c \
-	loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c \
-)
-LUA_OBJS = $(patsubst %.c, %$(O), $(LUA_SRCS))
-
-
-# libffi has its own emscripten configure and build
-# but what it spits out isn't "relocatable" i.e. I can't just link it below
-# so here's what I found in the libffi/src/wasm32/Makefile:
-LIBFFI_SRCS = $(patsubst %, libffi/%, \
-	src/prep_cif.c \
-	src/types.c \
-	src/raw_api.c \
-	src/java_raw_api.c \
-	src/closures.c \
-	src/tramp.c \
-	src/debug.c \
-	src/wasm32/ffi.c \
-)
-LIBFFI_OBJS = $(patsubst %.c, %$(O), $(LIBFFI_SRCS))
-
-
-LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \
-	call.c ctype.c ffi.c ffi_complex.c lua.c parser.c \
-)
-LUAFFIFB_OBJS = $(patsubst %.c, %$(O), $(LUAFFIFB_SRCS))
-
-
-# this is going to be a pain to configure and compile ...
-GNUPLOT_SRCS = $(patsubst %, gnuplot/src/%, \
-	alloc.c amos_airy.c axis.c breaders.c boundary.c color.c command.c command.c contour.c complexfun.c datablock.c datafile.c dynarray.c encoding.c \
-	eval.c external.c filters.c fit.c gadgets.c getcolor.c graph3d.c graphics.c help.c hidden3d.c history.c internal.c interpol.c jitter.c libcerf.c \
-	matrix.c misc.c mouse.c multiplot.c parse.c plot.c plot2d.c plot3d.c pm3d.c readline.c save.c scanner.c set.c show.c specfun.c standard.c stats.c \
-	stdfn.c tables.c tabulate.c term.c time.c unset.c util.c util3d.c variable.c version.c voxelgrid.c vplot.c watch.c xdg.c gp_cairo.c gp_cairo_helpers.c \
-	bf_test.c gplt_x11.c gpexecute.c getcolor.c checkdoc.c termdoc.c doc2ipf.c xref.c doc2tex.c termdoc.c doc2gih.c doc2rnh.c doc2hlp.c doc2rtf.c doc2ms.c \
-	termdoc.c doc2gih.c termdoc.c doc2html.c termdoc.c xref.c doc2web.c termdoc.c xref.c demo_plugin.c \
-)
-GNUPLOT_OBJS = $(patsubst %.c, %$(O), $(GNUPLOT_SRCS))
-
-
-# TODO compile lua to a main module
-#  and compile luaffifb and gnuplot to separate side modules
-# ... why even have any specific main? lua to a lib as well?  why not only ever side modules?
-DIST_SRCS= $(LUA_SRCS) \
-	$(LIBFFI_SRCS) \
-	$(LUAFFIFB_SRCS)
-	# $(GNUPLOT_SRCS)
-DIST_OBJS= $(patsubst %.c, %$(O), $(DIST_SRCS))
 
 
 # compile rule for libffi, which needs some extra includes...
@@ -231,26 +183,30 @@ libffi/%.o: libffi/%.c
 # make sure you have generated libffi's ffi.h for wasm already, as per README.md says
 # make sure the include dir order matches libffi/ above, in order to use the same ffitarget.h
 luaffifb/%.o: luaffifb/%.c
-	$(CC) $(CFLAGS) -c -I libffi/src/wasm32/include -I libffi/src/wasm32 -DCALL_WITH_LIBFFI -o $@ $^
+	$(CC) $(CFLAGS) -c -I lua/ -I libffi/src/wasm32/include -I libffi/src/wasm32 -DCALL_WITH_LIBFFI -o $@ $^
+
+#CFLAGS+=  -std=gnu99
+lua/%.o: lua/%.c
+	$(CC) $(CFLAGS) -c -DLUA_COMPAT_5_3 -I lua/ -o $@ $^
 
 # compile rule for all:
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
-
 # final
+# now comment out the module declaration because it uses 'var' which will screw up even if I wrap it all in a function with a `Module` arg
+#sed 's/^var Module/\/\/var Module/' $(DIST) > temp && mv temp $(DIST)
+# now assign HEAP ... which it does already when I don't use MAIN_MODULE/SIDE_MODULE, so why did it stop when I started using MAIN_MODULE/SIDE_MODULE ?
+#sed 's/HEAP\([0-9a-zA-Z]*\) = /HEAP\1 = Module.HEAP\1 = /' $(DIST) > temp && mv temp $(DIST)
+# seems FreeBSD sed is different from Linux sed
+# now wrap it all in a module, because emscripten thinks using MAIN_MODULE/SIDE_MODULE prevents it from usinng modules / ES6 somehow (??? wtf)
+#echo 'const defaultModule = (Module = {}) => new Promise((initResolve, initReject) => {' | cat - $(DIST) > temp && mv temp $(DIST)
+#echo 'addOnPostRun(() => { initResolve(Module); }); }); export default defaultModule;' >> $(DIST)
+# TODO ALSO comment out var Module = line OR ELSE IT BREAKS because JAVASCRIPT IS TRASH
+# ALSO make sure in updateMemoryViews() to assign HEAP* to Module.HEAP* because EMSCRIPTEN IS TRASH TOO (it did this before, but stopped doing it when i switched to MAIN_MODULE/SIDE_MODULE, which was necessary to access dlopen/dlsym from js)
 $(DIST): $(DIST_OBJS)
 	$(CC) $(LDFLAGS) -o $@ $^
-	# now comment out the module declaration because it uses 'var' which will screw up even if I wrap it all in a function with a `Module` arg
-	#sed 's/^var Module/\/\/var Module/' $(DIST) > temp && mv temp $(DIST)
-	# now assign HEAP ... which it does already when I don't use MAIN_MODULE/SIDE_MODULE, so why did it stop when I started using MAIN_MODULE/SIDE_MODULE ?
-	#sed 's/HEAP\([0-9a-zA-Z]*\) = /HEAP\1 = Module.HEAP\1 = /' $(DIST) > temp && mv temp $(DIST)
-	# seems FreeBSD sed is different from Linux sed
-	# now wrap it all in a module, because emscripten thinks using MAIN_MODULE/SIDE_MODULE prevents it from usinng modules / ES6 somehow (??? wtf)
-	#echo 'const defaultModule = (Module = {}) => new Promise((initResolve, initReject) => {' | cat - $(DIST) > temp && mv temp $(DIST)
-	#echo 'addOnPostRun(() => { initResolve(Module); }); }); export default defaultModule;' >> $(DIST)
-	# TODO ALSO comment out var Module = line OR ELSE IT BREAKS because JAVASCRIPT IS TRASH
-	# ALSO make sure in updateMemoryViews() to assign HEAP* to Module.HEAP* because EMSCRIPTEN IS TRASH TOO (it did this before, but stopped doing it when i switched to MAIN_MODULE/SIDE_MODULE, which was necessary to access dlopen/dlsym from js)
+
 
 .PHONY: distclean
 distclean:

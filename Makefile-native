@@ -1,6 +1,16 @@
 include Files.mk
 
 ############ native arch testing:
+# You can run this with:
+#
+# > ./lua.out
+#
+# However, it's 100% vanilla Lua 5.4.7, that means no FFI just yet,
+# But FFI is built into the binary.
+# So load it with this line:
+#
+# > package.loaded.ffi = package.loadlib('lua.out', 'luaopen_ffi')()
+
 CC=clang
 O=.o
 DIST=lua.out	# because 'lua' is a submodule - name in the dir is already used

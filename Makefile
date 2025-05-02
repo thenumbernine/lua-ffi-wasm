@@ -102,8 +102,8 @@ LDFLAGS=
 	#CFLAGS+= -x c++			# I only want this for Lua (right?)
 	CFLAGS+= -fPIC
 	LDFLAGS+= -s WASM=1
-	#CFLAGS+= -s MEMORY64=1			# this will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
-	#LDFLAGS+= -s MEMORY64=1
+	#CFLAGS+= -s MEMORY64=1			# This will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
+	#LDFLAGS+= -s MEMORY64=1			# But hopefully enabling it will make it so underlying lua integers are not 32bit.
 	LDFLAGS+= --no-entry
 	CFLAGS+= -s MAIN_MODULE=1		# I need this to use dlopen/dlsym
 	LDFLAGS+= -s MAIN_MODULE=1

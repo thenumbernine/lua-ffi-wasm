@@ -65,8 +65,10 @@ print'Hello, World!'
 ## lua-interop JS API:
 
 Emscripten Module defaults set specifically by `lua-interop.js`:
-- `.locateFile` looks in `/js/lua-5.4.7-with-ffi.wasm`
+- `.locateFile` = function that returns where to find the emscripten-built WASM, `/js/lua-5.4.7-with-ffi.wasm` by default
 - `.print` and `.printErr` redirect to `console.log`
+Additional arguments that `lua-interop.js` uses:
+- `.jsPath` = string of where to find the emscripten-built JS, `/js/lua-5.4.7-with-ffi.js` by default.
 
 `lua` includes in it:
 - `lua.lib`, which is the module returned from Emscripten.

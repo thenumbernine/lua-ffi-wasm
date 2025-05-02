@@ -1,15 +1,16 @@
 /*
 This file will load the emscripten module and provide the lua<->js wrapper code
 */
-import { default as newLuaLib } from '/js/lua-5.4.7-with-ffi.js';
-
 const newLua = async(args = {}) => {
 
 args.locateFile ??= () => '/js/lua-5.4.7-with-ffi.wasm';
 args.print ??= s => { console.log('> '+s); }
 args.printErr ??= s => { console.log('> '+s); }
 
-const M = await newLuaLib(args);
+const jsPath = args.luaJSPath || '/js/lua-5.4.7-with-ffi.js';
+
+const newLuaLib = await import(jsPath);
+const M = await newLuaLib.default(args);
 
 // luaconf.h
 M.LUAI_MAXSTACK = 1000000;	// 32 bit

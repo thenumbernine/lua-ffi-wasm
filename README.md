@@ -137,8 +137,8 @@ TODO:
 |   `number` / int64 |←|         `bigint`** |
 |           `string` |↔|           `string` |
 |            `table` |→|     `Proxy` object |
+|         `function` |→|     `Proxy` object |
 |      `table` proxy |←|           `object` |
-|         `function` |→|         `function` |
 |      `table` proxy |←|         `function` |
 |         `userdata` |→| `{userdata:<ptr>}` |
 |           `thread` |→|   `{thread:<ptr>}` |
@@ -147,19 +147,22 @@ TODO:
 - **Converting JS BigInts to Lua: BigInt is supposed to be arbitrary-precision, so it deserves a proper library like [LibBF](https://bellard.org/libbf/) or [GMP](https://gmplib.org/) or something.  In the mean time I'll just save them as Lua-integers, which under this build seem to be 64bit.
 	BigInts converted to Lua will get truncated to Lua's internal `lua_Integer` type.  That seems to be `int64` at the moment.
 - String conversion between JS and Lua is with Emscripten's `stringToNewUTF8` / `UTF8ToString`.
-- Lua tables are exposed to JS using a `Proxy` object. These `Proxy` objects support reading and writing fields.
-	- Keys are as-is.  I don't +1 -1 to make the indexes of one match the environment/language of the other.  Maybe I will write some kind of Array wrapper in each Lua and JS environment for this interoperability.  Maybe `isArrow` will become a collection of serialization arguments.
-- JS objects/functions are exposed to Lua using a proxy table. These tables support:
-	- getters
-	- setters
-	- the Lua length operator `#` will return the `.length` of the JS object, or `0` if neither is found.
-	- calls
-- Lua functions are converted to JS wrapping functions.
-	- Writing to subsequent fields of a Lua function from within JS will not reflect a written field in the Lua function object.  At least until I figure out how to do JS proxy call operations.
-	- If a Lua function returns nothing then the JS wrapper will return nothing,
-		otherwise the JS function will always return an array of the return values.  This is because JS doesn't support multiple-return, and if I decided to only unwrap single-return results then returning `{{1,2}}` versus `1,2` would be ambiguous.
-- JS functions are converted to Lua proxy objects.
-	- When calling JS functions in Lua, the 1st arg goes to the `this` variable of JS, unless manually specified (see the `isArrow` parameter of `lua.push`).  Atypical examples that do not use `this` can be found in the `require 'js'` API.
+- JS objects/functions are exposed to Lua using either the `str_luaWrapObjectMT` or the `str_luaWrapFuncMT` metatables.
+	- `__index` to read JS object/function fields.
+		- Indexing Keys are as-is.  I don't +1 -1 to make the indexes of one match the environment/language of the other.  Maybe I will write some kind of Array wrapper in each Lua and JS environment for this interoperability.  Maybe `isArrow` will become a collection of serialization arguments.
+	- `__newindex` to write JS object/function fields.
+	- `__call` to call the JS object/function.
+		- By default, the first function argument from Lua is used as the JS function call's `this` argument.  (`str_luaWrapObjectMT` behavior)
+			You can disable this when pushing the JS function to Lua via `lua.push` by setting the `isArrow` argument to true.
+			Then the first Lua function argument will be passed to the first JS function argument (`str_luaWrapFuncMT` behavior).
+	- `__len` to read the `.length` property of the JS object/function.
+- Lua objects/functions are exposed to JS using JS `Proxy`.
+	- Proxy `get` to read Lua object/function fields.
+	- Proxy `set` to write Lua object/function fields.
+	- Proxy `apply` to call the Lua object/function.
+		- JS args are passed to Lua args.  The JS `this` of the proxy object is not used.
+		- The JS function will always return an array of the return values, or return `undefined` if no values were returned.
+			This is because JS doesn't support multiple-return, and if I decided to only unwrap single-return results then returning `{{1,2}}` versus `1,2` would be ambiguous.
 
 <hr>
 

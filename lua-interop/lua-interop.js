@@ -282,6 +282,10 @@ const callLua = (L, pushFunc, ...args) => {
 	return ret;
 };
 
+// What our proxy target is.
+// Not used for anything except maybe enabling the `apply` operator.
+const jsProxyTarget = () => {};
+
 // Returns the JavaScript object equvalent of Lua @ stack `i`.
 // Leaves the stack unchanged.
 const lua_to_js = (L, i) => {
@@ -351,52 +355,58 @@ const lua_to_js = (L, i) => {
 			const jsObjID = BigInt(jsToLua.size);	// consistent with push_js below
 //console.log('lua_to_js cache key=', jsObjID);
 
-			let jsValue;
-			if (t == M.LUA_TTABLE) {
 //console.log('creating js wrapper for lua obj...');
-				jsValue = new Proxy({}, {
-					get : (proxyObj, luaKey) => {
+			const jsValue = new Proxy(jsProxyTarget, {
+				get : (proxyObj, luaKey) => {
 //console.log('calling JS getter', proxyObj, luaKey);
 //const Ltop = M._lua_gettop(L);
 //console.log('pushForJsObjID', jsObjID);
-						pushForJsObjID(L, jsObjID);			// stack: ..., t = the outer scope's luaValue
+					pushForJsObjID(L, jsObjID);			// stack: ..., t = the outer scope's luaValue
 //console.log('push_js', luaKey);
-						push_js(L, luaKey);					// stack: ..., t, luaKey
+					push_js(L, luaKey);					// stack: ..., t, luaKey
 //console.log('lua_gettable(-2)');
-						M._lua_gettable(L, -2);				// stack: ..., t, t[luaKey]
+					M._lua_gettable(L, -2);				// stack: ..., t, t[luaKey]
 //console.log('lua_to_js(-1)...');
-						const result = lua_to_js(L, -1);
+					const result = lua_to_js(L, -1);
 //console.log('...is', result);
 //console.log('lua_pop(2)');
-						M._lua_pop(L, 2);					// stack: ...
+					M._lua_pop(L, 2);					// stack: ...
 //{ const Ntop = M._lua_gettop(L); if (Ntop !== Ltop) throw "top before: "+Ltop+" after: "+Ntop; }
-						return result;
-					},
-					set : (proxyObj, luaKey, value) => {
+					return result;
+				},
+
+				set : (proxyObj, luaKey, value) => {
 //console.log('calling JS setter', proxyObj, luaKey, value);
 //const Ltop = M._lua_gettop(L);
 //console.log('pushForJsObjID', jsObjID);
-						pushForJsObjID(L, jsObjID);			// stack: ..., t = the outer scope's luaValue
+					pushForJsObjID(L, jsObjID);			// stack: ..., t = the outer scope's luaValue
 //console.log('push_js', luaKey);
-						push_js(L, luaKey);					// stack: ..., t, luaKey
+					push_js(L, luaKey);					// stack: ..., t, luaKey
 //console.log('push_js', value);
-						push_js(L, value);					// stack: ..., t, luaKey, value
+					push_js(L, value);					// stack: ..., t, luaKey, value
 //console.log('lua_settable(-3)');
-						M._lua_settable(L, -3);				// stack: ..., t;  luaValue[luaKey]=value
+					M._lua_settable(L, -3);				// stack: ..., t;  luaValue[luaKey]=value
 //console.log('lua_pop(1)');
-						M._lua_pop(L, 1);					// stack: ...
+					M._lua_pop(L, 1);					// stack: ...
 //{ const Ntop = M._lua_gettop(L); if (Ntop !== Ltop) throw "top before: "+Ltop+" after: "+Ntop; }
-					},
-				});
-//console.log('done with wrapper', jsValue);
-			} else if (t == M.LUA_TFUNCTION) {
-				jsValue = (...args) => {
+				},
+
+				// When JS calls a Lua-wrapper, we are throwing away the 'this' of JS, because most people don't even realize it's there.
+				// I used to do this with a single JS function wrapper instead of an object [[Call]] proxy wrapper, that might have been a bit faster.
+				apply : (proxyObj, thisArg, args) => {
 					return callLua(L, (L, Ltop) => {
 						pushForJsObjID(L, jsObjID);
 					}, ...args);
-				};
-			}
-//console.log('lua_to_js built wrapper', jsValue);
+				},
+				// ... would give "Uncaught TypeError: o is not a function"
+				// Because I guess JavaScript is retarded and cannot use `apply` property unless the first arg passed into the proxy is a function.
+				// So now I have to switch the wrapped object from {} to ()=>{}
+				// And now I bet things will run a bit slower.
+			});
+//console.log('done with wrapper', jsValue);
+			// If you want to handle / wrap Lua functions as JS functions, that might be more lightweight than wrapping Lua functions as JS Proxy objs.
+			// But the benefit of wrapping Lua functions as JS proxy objs is that you can use get/set in JS to get/set properties of Lua functions.
+			// And, mind you, they typically do not exist, but they *can* exist if you set Lua's `debug.setmetatable` on a function to override all functions' metatables' `__index` and give all functions properties.
 //console.log('lua_to_js top=', M._lua_gettop(L));
 
 			luaToJs.set(jsObjID, jsValue);
@@ -484,6 +494,7 @@ const Ltop = M._lua_gettop(L);
 		}
 		break;
 	default:
+console.log('push_js unknown lua type', t, jsValue);
 		throw "push_js unknown js type "+t;
 	}
 //console.log('push_js end top', M._lua_gettop(L));
@@ -494,6 +505,7 @@ const Ntop = M._lua_gettop(L); if (Ntop !== Ltop+1) throw "top before: "+Ltop+" 
 let L;
 const lua = {
 	lib : M,
+
 	newState : function() {
 		L = M._luaL_newstate();
 		this.L = L;	// for read access only, don't bother write, lua is a singleton and M is stored in the closure

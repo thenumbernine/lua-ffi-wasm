@@ -119,28 +119,40 @@ Leaving `isArrow` as false, the default value, tells lua-interop that the first 
 
 # JS/Lua conversion:
 
-|           Lua |   |                 JS |
-|---------------|---|--------------------|
-|         `nil` |↔|        `undefined` |
-|     `js.null` |↔|             `null` |
-|     `boolean` |↔|          `boolean` |
-|      `number` |↔|           `number` |
-|      `string` |↔|           `string` |
-|       `table` |→|     `Proxy` object |
-| `table` proxy |←|           `object` |
-|    `function` |→|         `function` |
-| `table` proxy |←|         `function` |
-|    `userdata` |→| `{userdata:<ptr>}` |
-|      `thread` |→|   `{thread:<ptr>}` |
+|                Lua | |                 JS |
+|--------------------|-|--------------------|
+|              `nil` |↔|        `undefined` |
+|          `js.null` |↔|             `null` |
+|          `boolean` |↔|          `boolean` |
+|  `number` / double |→|           `number` |
+|  `number` / int64* |→|           `bigint` |
+|           `number` |←|           `number` |
+|   `number` / int64 |←|         `bigint`** |
+|           `string` |↔|           `string` |
+|            `table` |→|     `Proxy` object |
+|      `table` proxy |←|           `object` |
+|         `function` |→|         `function` |
+|      `table` proxy |←|         `function` |
+|         `userdata` |→| `{userdata:<ptr>}` |
+|           `thread` |→|   `{thread:<ptr>}` |
 
+- *Converting Lua integers to JS: If the value is finite and within `MAX_SAFE_INTEGER` then a `number` will be used, otherwise a `BigInt` will be used.
+- **Converting JS BigInts to Lua: BigInt is supposed to be arbitrary-precision, so it deserves a proper library like [LibBF](https://bellard.org/libbf/) or [GMP](https://gmplib.org/) or something.  In the mean time I'll just save them as Lua-integers, which under this build seem to be 64bit.
+	BigInts converted to Lua will get truncated to ... (checks) 32 bits.  Wait a second, why does Emscripten convert the `lua_Integer` to `BigInt` and other `int` indexes to `number`, when the underlying compiled code truncates those `BigInt`s to 32-bit and the `int`s to 53 bits ... 🤦🤦🤦.  I will try to rebuild in Wasm64 but that will throw BigInts everywhere in the Lua API.
 - String conversion between JS and Lua is with Emscripten's `stringToNewUTF8` / `UTF8ToString`.
 - Lua tables are exposed to JS using a `Proxy` object. These `Proxy` objects support reading and writing fields.
+	- Keys are as-is.  I don't +1 -1 to make the indexes of one match the environment/language of the other.  Maybe I will write some kind of Array wrapper in each Lua and JS environment for this interoperability.  Maybe `isArrow` will become a collection of serialization arguments.
 - JS objects/functions are exposed to Lua using a proxy table. These tables support:
 	- getters
 	- setters
 	- the Lua length operator `#` will return the `.length` or `.size` of the JS object, or `0` if neither is found.
 	- calls
-- Lua functions are converted to JS functions.  Writing to subsequent fields of a Lua function from within JS will not reflect a written field in the Lua function object.  At least until I figure out how to do JS proxy call operations.
+- Lua functions are converted to JS wrapping functions.
+	- Writing to subsequent fields of a Lua function from within JS will not reflect a written field in the Lua function object.  At least until I figure out how to do JS proxy call operations.
+	- If a Lua function returns nothing then the JS wrapper will return nothing,
+		otherwise the JS function will always return an array of the return values.  This is because JS doesn't support multiple-return, and if I decided to only unwrap single-return results then returning `{{1,2}}` versus `1,2` would be ambiguous.
+- JS functions are converted to Lua proxy objects.
+	- When calling JS functions in Lua, the 1st arg goes to the `this` variable of JS, unless manually specified (see the `isArrow` parameter of `push_js`).  Atypical examples that do not use `this` can be found in the `require 'js'` API.
 
 <hr>
 

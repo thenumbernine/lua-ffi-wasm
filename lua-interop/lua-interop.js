@@ -85,6 +85,7 @@ const str___newindex = M.stringToNewUTF8('__newindex');
 const str___tostring = M.stringToNewUTF8('__tostring');
 const str___len = M.stringToNewUTF8('__len');
 const str___call = M.stringToNewUTF8('__call');
+const str___pairs = M.stringToNewUTF8('__pairs');
 const str__null_ = M.stringToNewUTF8('[null]');
 const str_package = M.stringToNewUTF8('package');
 const str_loaded = M.stringToNewUTF8('loaded');
@@ -184,6 +185,41 @@ const call_func = (L, isArrow) => {
 const wrapper___call_func = M.addFunction(L => call_func(L, false), 'ip');
 const wrapper___callArrow_func = M.addFunction(L => call_func(L, true), 'ip');
 
+
+/*
+accepts: obj
+returns:
+#1) function that does what next does
+#2) state, which is the obj typically
+#3) the initial key, which is `nil` for `next`
+
+What does `next(t, k)` do?
+- returns the next key and the next value after t[k] in iteration.
+- when it's done, returns nil
+*/
+const wrapper___pairs_func = M.addFunction(L => {	// stack: obj
+	const jsValue = lua_to_js(L, 1);
+	// how to do this...
+	// - lookup each key and its successor each iteration (O(n^2), worst)
+	// - use yield and a for-loop, O(n), O(1) storage, but then you have to * everything.
+	// - save all keys here, and iterate them (O(n) but O(n) storage too):
+	const keys = Object.keys(jsValue);
+	let i = 0;
+		// how to implement the `next`?
+		// - easiest / worst way is make a new function with its own closure ...
+	M._lua_pushcfunction(L, M.addFunction(L => {	// 'next(t,k)'
+		if (i >= keys.length) return 0;
+		const k = keys[i];
+		++i;
+		push_js(L, k);
+		push_js(L, jsValue[k]);
+		return 2;
+	}, 'ip'));
+		// - next-better way would be to use the initial key ...
+	M._lua_pushvalue(L, 1);	// next's 't'
+	M._lua_pushnil(L);		// next's 'k'
+	return 3;
+}, 'ip');
 
 // maps from js objects to some kind of index to look up lua object in lua table
 // meanwhile we have a jsToLua table in Lua that maps these indexes to tables
@@ -546,8 +582,11 @@ const lua = {
 			M._lua_pushcfunction(L, wrapper___len_func);	// t, mt, luaWrapper
 			M._lua_setfield(L, -2, str___len);
 
-			M._lua_pushcfunction(L, wrapper___call_func);		// luaWrapper
+			M._lua_pushcfunction(L, wrapper___call_func);		// t, mt, luaWrapper
 			M._lua_setfield(L, -2, str___call);
+
+			M._lua_pushcfunction(L, wrapper___pairs_func);		// t, mt, luaWrapper
+			M._lua_setfield(L, -2, str___pairs);
 		}
 		M._lua_pop(L, 1);
 
@@ -564,8 +603,11 @@ const lua = {
 			M._lua_pushcfunction(L, wrapper___len_func);	// t, mt, luaWrapper
 			M._lua_setfield(L, -2, str___len);
 
-			M._lua_pushcfunction(L, wrapper___callArrow_func);		// luaWrapper
+			M._lua_pushcfunction(L, wrapper___callArrow_func);		// t, mt, luaWrapper
 			M._lua_setfield(L, -2, str___call);
+
+			M._lua_pushcfunction(L, wrapper___pairs_func);		// t, mt, luaWrapper
+			M._lua_setfield(L, -2, str___pairs);
 		}
 		M._lua_pop(L, 1);
 

@@ -156,6 +156,7 @@ TODO:
 			You can disable this when pushing the JS function to Lua via `lua.push` by setting the `isArrow` argument to true.
 			Then the first Lua function argument will be passed to the first JS function argument (`str_luaWrapFuncMT` behavior).
 	- `__len` to read the `.length` property of the JS object/function.
+	- `__pairs` to iterate over JS properties.  Currently is lazy implementation that just caches `Object.keys` and pushes a new lambda that iterates over them.
 - Lua objects/functions are exposed to JS using JS `Proxy`.
 	- Proxy `get` to read Lua object/function fields.
 	- Proxy `set` to write Lua object/function fields.

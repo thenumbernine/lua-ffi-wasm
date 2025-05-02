@@ -150,7 +150,7 @@ const wrapper___tostring_func = M.addFunction(L => {
 
 const wrapper___len_func = M.addFunction(L => {
 	const jsValue = lua_to_js(L, 1);	// optional line or just use the closure variable
-	M._lua_pushinteger(L, BigInt(jsValue.length || jsValue.size || 0));
+	M._lua_pushinteger(L, BigInt(jsValue.length || 0));
 	return 1;
 }, 'ip');
 
@@ -608,7 +608,7 @@ const lua = {
 		luaToJs.set(jsToLua.get(jsNullToken), null);
 
 		// js.new():
-		push_js(L, (cl, ...args) => new cl(...args) );
+		push_js(L, (cl, ...args) => new cl(...args), true );
 		M._lua_setfield(L, -2, str_new);
 
 		// js.tonumber()
@@ -630,10 +630,31 @@ const lua = {
 		M._lua_setfield(L, -2, str_js);	// package.loaded;  package.loaded.js = js
 	},
 
+	// Loads Lua code, returns a JS function that executes it.
+	load : function(s) {
+		const result = M._luaL_loadstring(L, M.stringToNewUTF8(s));
+		if (result != M.LUA_OK) {
+			const msg = M.UTF8ToString(M._lua_tostring(L, -1));
+			M._lua_pop(L, 1);
+
+			// reset the top before doing anything stupid ...
+			// I guess I could catch{} JS errors, but meh
+			throw 'syntax error: '+msg;
+		}
+
+		const f = lua_to_js(L, -1);
+		M._lua_pop(L, 1);
+		return f;
+	},
+
 	// Run Lua code.
 	// args = unpacked args to the Lua function.
 	// Returns a JS array of the Lua function results.
 	// Throws the message upon error.
+	//
+	// Really ... this is redundant.  Just use lua.load(s)(...args).
+	// Just maybe this has less overhead because it's not creating a proxy function object, but it's making proxies for all the arguments anyways so meh.
+	//
 	doString : function(s, ...args) {
 		return callLua(L, (L, Ltop) => {
 			const result = M._luaL_loadstring(L, M.stringToNewUTF8(s));
@@ -656,8 +677,8 @@ const lua = {
 		return _G;
 	},
 
-	push_js : push_js,
-	lua_to_js : lua_to_js,
+	push : push_js,
+	tojs : lua_to_js,
 };
 
 	return lua;

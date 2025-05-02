@@ -73,7 +73,7 @@ Emscripten Module defaults set specifically by `lua-interop.js`:
 Take note that all the symbols in `lua.lib` that were originally C functions, including those pertaining to Lua, all start with an underscore `_`.
 If you open the `lua-5.4.7-with-ffi.js` file then you will see this is purely cosmetic and done by Emscripten (against my will), but I gave up on trying to find which compile flags versus compiling as C++ vs C would remove the underscore, so now it's a feature not a bug.
 
-I've added to `lua.lib` some additional fields: 
+I've added to `lua.lib` some additional fields:
 - as many familiar `LUA_*` macro-values as I could muster.
 - as many familiar `_lua_*` macro-functions as I could muster.
 
@@ -83,21 +83,25 @@ If you want to make and use a new `lua_State` but without `luaffi` then feel fre
 Also it sets up `package.loaded.js` to hold our Lua's JS API, such that a `require 'js'` will retrieve it within Lua.
 Currently the Lua state is a bit of a singleton, so calling this successive times will ditch the old stored Lua State and whatever else is used with it.
 
-`lua.doString(code, ...args)` = Compiles the Lua code in `code` into a Lua function and calls it with `args` passed into it.
-`args` are serialized from JS to Lua, and results are serialized from Lua to JS and returned in a JS Array.  If the Lua function has no results then nothing is returned to JS.
+`lua.load(code)` = Compiles the Lua code into a Lua function and returns a JS function wrapping it.
+`args` are serialized from JS to Lua, and results are serialized from Lua to JS and returned in a JS Array.
+If the Lua function has no results then nothing is returned to JS.
+
+`lua.doString(code, ...args)` = Compiles the Lua code into a Lua function and calls it with `args` passed into it.
+This is shorthand for `lua.load(code)(...args)`, except that it does not create the JS-wrapper of the `lua_function` that is generated and called.
 
 `lua._G()` = Returns the Lua `_G` global table to JavaScript.
 
 `lua.luaopen_js` is an internal function, used for setting up the `require'js'` in the Lua state, called upon `lua.newState()`.
 
-`lua.push_js(L, value, [isArrow])` = Push a Lua-proxy of a JS object onto the Lua stack.
+`lua.push(L, value, [isArrow])` = Push a Lua-proxy of a JS object onto the Lua stack.
 ` L` = the Lua state.
 - `value` = the value to be pushed.
 - `isArrow` = JavaScript has no easy way to distinguish between `function(){}` functions and `()=>{}` functions.  The first have a `this` argument and the second does not.
 Setting this `isArrow` parameter to be true tells lua-interop that the value is a JS arrow-function, such that subsequent Lua calls to the function will forward arguments 1:1.
-Leaving `isArrow` as false, the default value, tells lua-interop that the first argument of all Lua calls to JS is used as its `this` parameter in JS. 
+Leaving `isArrow` as false, the default value, tells lua-interop that the first argument of all Lua calls to JS is used as its `this` parameter in JS.
 
-`lua.lua_to_js(L, index)` = Convert the Lua value at stack location `index` into a JS object and return it.
+`lua.tojs(L, index)` = Convert the Lua value at stack location `index` into a JS object and return it.
 
 ## lua-interop Lua API:
 
@@ -116,6 +120,9 @@ Leaving `isArrow` as false, the default value, tells lua-interop that the first 
 `js.instanceof(a,b)` = Returns JavaScript evaluation of `a instanceof b` .
 
 `js.typeof(x)` = Returns JavaScript evaluation of `typeof(x)`.
+
+TODO:
+- `js.of`
 
 # JS/Lua conversion:
 
@@ -145,14 +152,14 @@ Leaving `isArrow` as false, the default value, tells lua-interop that the first 
 - JS objects/functions are exposed to Lua using a proxy table. These tables support:
 	- getters
 	- setters
-	- the Lua length operator `#` will return the `.length` or `.size` of the JS object, or `0` if neither is found.
+	- the Lua length operator `#` will return the `.length` of the JS object, or `0` if neither is found.
 	- calls
 - Lua functions are converted to JS wrapping functions.
 	- Writing to subsequent fields of a Lua function from within JS will not reflect a written field in the Lua function object.  At least until I figure out how to do JS proxy call operations.
 	- If a Lua function returns nothing then the JS wrapper will return nothing,
 		otherwise the JS function will always return an array of the return values.  This is because JS doesn't support multiple-return, and if I decided to only unwrap single-return results then returning `{{1,2}}` versus `1,2` would be ambiguous.
 - JS functions are converted to Lua proxy objects.
-	- When calling JS functions in Lua, the 1st arg goes to the `this` variable of JS, unless manually specified (see the `isArrow` parameter of `push_js`).  Atypical examples that do not use `this` can be found in the `require 'js'` API.
+	- When calling JS functions in Lua, the 1st arg goes to the `this` variable of JS, unless manually specified (see the `isArrow` parameter of `lua.push`).  Atypical examples that do not use `this` can be found in the `require 'js'` API.
 
 <hr>
 

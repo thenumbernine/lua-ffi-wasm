@@ -263,11 +263,18 @@ const callLua = (L, pushFunc, ...args) => {
 	// results ... always an array?  coerce to prim for size <= 1?
 	const numret = M._lua_gettop(L) - Ltop - 1;	// -1 for msgh
 
-	// should I bother allocate an array if there's no return contents?
+	let ret = undefined;
+	// Should I bother allocate an array if there's no return contents?  Nah...
+	if (numret) {
 //console.log('lua_to_js proxy function got back #return=', numret);
-	const ret = [];
-	for (let i = 0; i < numret; ++i) {
-		ret.push(lua_to_js(L, -numret+i));
+		ret = [];
+		for (let i = 0; i < numret; ++i) {
+			ret.push(lua_to_js(L, -numret+i));
+		}
+		// Don't unpack single-element multret arrays.
+		// If you unpack them then when your results are an Array you are left wondering was it multret or was it just the first argument?
+		// Lua returning a single arg of {{x,y}} unpacking to [x,y], is ambiguous with Lua multiple arg returning x,y
+		// But always returning Arrays guarantees any returned array is the JS results in-order as-is.
 	}
 
 //console.log('lua_to_proxy function got results', ret);

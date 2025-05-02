@@ -135,7 +135,7 @@ LDFLAGS=
 	#LDFLAGS+= -s WASM_ASYNC_COMPILATION=0	# js init complains if I disable this
 	#LDFLAGS+= -s ERROR_ON_UNDEFINED_SYMBOLS=0	# because emscripten wants some internal function __syscall_mprotect but it's internal to emscripten so it just errors for no fucking reason
 	LDFLAGS+= -s 'EXPORTED_RUNTIME_METHODS=["FS","stringToNewUTF8","addFunction"]'
-	LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["malloc","free"]'		# is it absolutely random which functions emscripten chooses to export when you say EXPORT_ALL?  I have to still  manually specify these.  It will warn me that I don't since I already said EXPORT_ALL.  But EXPORT_ALL missed these.  And manually specifying them reminds emscripten to include them along with whatever is its idea of "all".
+	LDFLAGS+= -s 'EXPORTED_FUNCTIONS=["_malloc","_free"]'		# is it absolutely random which functions emscripten chooses to export when you say EXPORT_ALL?  I have to still  manually specify these.  It will warn me that I don't since I already said EXPORT_ALL.  But EXPORT_ALL missed these.  And manually specifying them reminds emscripten to include them along with whatever is its idea of "all".
 
 
 ############ native arch testing:
@@ -262,3 +262,4 @@ INSTALL_DIR=../../thenumbernine.github.io/js/
 install: $(DIST)
 	cp $(DIST) $(INSTALL_DIR)
 	cp $(DIST_WASM) $(INSTALL_DIR)
+	cp lua-interop/lua-interop.js $(INSTALL_DIR)

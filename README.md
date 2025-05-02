@@ -38,7 +38,7 @@ What else I tried before I came to this option:
 - Other contenders?
 	- https://github.com/Doridian/LuaJS
 
-# LIBFFI
+# LibFFI
 
 I am using luaffifb, but it invokes calls with JIT, which I'm avoding / can't do courtesy of WASM target.  My fix, to use LibFFI with luaffifb.
 
@@ -62,6 +62,107 @@ And then we add our complex upport macro, cuz the generated one had that, but th
 ```
 echo '#define FFI_TARGET_HAS_COMPLEX_TYPE' >> include/ffitarget.h
 ```
+
+<hr>
+
+# lua-interop.js
+
+Now that you've got your `lua-5.4.7-with-ffi.js` and `.wasm` files, that's great, but who is going to just push bytes into WASM?
+The `lua-interopj.s` file is a JS/Lua interop library that sits on top of this.  I tried sticking to Fengari or WasMoon as much as possible.
+
+Initialization:
+``` javascript
+import {newLua} from '/js/lua-interop.js';
+const lua = await newLua({
+	//... your Emscripten Module args go here ...
+});
+lua.newState();	// create your initial lua_State
+lua.doString(`
+print'Hello, World!'
+`);				// run Lua code in JS
+```
+
+## lua-interop JS API:
+
+Emscripten Module defaults set specifically by `lua-interop.js`:
+- `.locateFile` looks in `/js/lua-5.4.7-with-ffi.wasm`
+- `.print` and `.printErr` redirect to `console.log`
+
+`lua` includes in it:
+- `lua.lib`, which is the module returned from Emscripten.
+Take note that all the symbols in `lua.lib` that were originally C functions, including those pertaining to Lua, all start with an underscore `_`.
+If you open the `lua-5.4.7-with-ffi.js` file then you will see this is purely cosmetic and done by Emscripten (against my will), but I gave up on trying to find which compile flags versus compiling as C++ vs C would remove the underscore, so now it's a feature not a bug.
+
+I've added to `lua.lib` some additional fields: 
+- as many familiar `LUA_*` macro-values as I could muster.
+- as many familiar `_lua_*` macro-functions as I could muster.
+
+`lua.newState()` = Create a new Lua state and store it within the `lua` object as `lua.L`.
+It also sets up `luaopen_ffi` and all the objects necessary for JS/Lua interop.
+If you want to make and use a new `lua_State` but without `luaffi` then feel free to follow the original Lua C API.
+Also it sets up `package.loaded.js` to hold our Lua's JS API, such that a `require 'js'` will retrieve it within Lua.
+Currently the Lua state is a bit of a singleton, so calling this successive times will ditch the old stored Lua State and whatever else is used with it.
+
+`lua.doString(code, ...args)` = Compiles the Lua code in `code` into a Lua function and calls it with `args` passed into it.
+`args` are serialized from JS to Lua, and results are serialized from Lua to JS and returned in a JS Array.  If the Lua function has no results then nothing is returned to JS.
+
+`lua._G()` = Returns the Lua `_G` global table to JavaScript.
+
+`lua.luaopen_js` is an internal function, used for setting up the `require'js'` in the Lua state, called upon `lua.newState()`.
+
+`lua.push_js(L, value, [isArrow])` = Push a Lua-proxy of a JS object onto the Lua stack.
+` L` = the Lua state.
+- `value` = the value to be pushed.
+- `isArrow` = JavaScript has no easy way to distinguish between `function(){}` functions and `()=>{}` functions.  The first have a `this` argument and the second does not.
+Setting this `isArrow` parameter to be true tells lua-interop that the value is a JS arrow-function, such that subsequent Lua calls to the function will forward arguments 1:1.
+Leaving `isArrow` as false, the default value, tells lua-interop that the first argument of all Lua calls to JS is used as its `this` parameter in JS. 
+
+`lua.lua_to_js(L, index)` = Convert the Lua value at stack location `index` into a JS object and return it.
+
+## lua-interop Lua API:
+
+`js = require 'js'` = retrieve the JS API
+
+`js.global` = This is the `window` object in JavaScript.
+
+`js.null` = This token represents `null` in JavaScript, while Lua's `nil` represents `undefined` in JavaScript.
+
+`js.new(class, ...)` = Create a new JS object of class `class`, and constructor args `...` and return it to the Lua API.
+
+`js.tonumber(x)` = Cast a value to a number using JavaScript.
+
+`js.tostring(x)` = Cast a value to a string using JavaScript.
+
+`js.instanceof(a,b)` = Returns JavaScript evaluation of `a instanceof b` .
+
+`js.typeof(x)` = Returns JavaScript evaluation of `typeof(x)`.
+
+# JS/Lua conversion:
+
+|           Lua |   |                 JS |
+|---------------|---|--------------------|
+|         `nil` |<->|        `undefined` |
+|     `js.null` |<->|             `null` |
+|     `boolean` |<->|          `boolean` |
+|      `number` |<->|           `number` |
+|      `string` |<->|           `string` |
+|       `table` | ->|     `Proxy` object |
+| `table` proxy |<- |           `object` |
+|    `function` | ->|         `function` |
+| `table` proxy |<- |         `function` |
+|    `userdata` | ->| `{userdata:<ptr>}` |
+|      `thread` | ->|   `{thread:<ptr>}` |
+
+- String conversion between JS and Lua is with Emscripten's `stringToNewUTF8` / `UTF8ToString`.
+- Lua tables are exposed to JS using a `Proxy` object. These `Proxy` objects support reading and writing fields.
+- JS objects/functions are exposed to Lua using a proxy table. These tables support:
+	- getters
+	- setters
+	- the Lua length operator `#` will return the `.length` or `.size` of the JS object, or `0` if neither is found.
+	- calls
+- Lua functions are converted to JS functions.  Writing to subsequent fields of a Lua function from within JS will not reflect a written field in the Lua function object.
+
+<hr>
 
 # MAKEFILE TODO:
 

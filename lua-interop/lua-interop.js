@@ -100,6 +100,13 @@ const str_typeof = M.stringToNewUTF8('typeof');
 const str_js = M.stringToNewUTF8('js');
 const str_ffi = M.stringToNewUTF8('ffi');
 
+
+// maps from js objects to some kind of index to look up lua object in lua table
+// meanwhile we have a jsToLua table in Lua that maps these indexes to tables
+let nextJsObjId = 1n;
+let jsToLua, luaToJs;
+
+
 // define this before doing any lua<->js stuff
 const errHandler = M.addFunction(L => {
 	let msg = M._lua_tostring(L, 1);
@@ -222,9 +229,6 @@ const wrapper___pairs_func = M.addFunction(L => {	// stack: obj
 	return 3;
 }, 'ip');
 
-// maps from js objects to some kind of index to look up lua object in lua table
-// meanwhile we have a jsToLua table in Lua that maps these indexes to tables
-let jsToLua, luaToJs;
 
 // pushes registry[key] for C-pointer 'key'
 const pushRegistry = (L, key) => {
@@ -383,13 +387,13 @@ const lua_to_js = (L, i) => {
 //console.log('lua_to_js top=', M._lua_gettop(L));
 //console.log('lua_to_js returning', luaToJs.get(jsObjID));
 //{ const Ntop = M._lua_gettop(L); if (Ntop !== Ltop) throw "top before: "+Ltop+" after: "+Ntop; }
-			return luaToJs.get(jsObjID);
+			return luaToJs.get(jsObjID).deref();
 		} else {
 //console.log('lua_to_js building wrapper...');
 			M._lua_pop(L, 2);			// stack = ...
 //console.log('lua_to_js top=', M._lua_gettop(L));
 
-			const jsObjID = BigInt(jsToLua.size);	// consistent with push_js below
+			const jsObjID = ++nextJsObjId;	// consistent with push_js below
 //console.log('lua_to_js cache key=', jsObjID);
 
 //console.log('creating js wrapper for lua obj...');
@@ -446,7 +450,7 @@ const lua_to_js = (L, i) => {
 			// And, mind you, they typically do not exist, but they *can* exist if you set Lua's `debug.setmetatable` on a function to override all functions' metatables' `__index` and give all functions properties.
 //console.log('lua_to_js top=', M._lua_gettop(L));
 
-			luaToJs.set(jsObjID, jsValue);
+			luaToJs.set(jsObjID, new WeakRef(jsValue));
 			jsToLua.set(jsValue, jsObjID);
 			lua_setLuaToJs(L, i, jsObjID);	// jsToLua[jsObjID] = stack[i]
 			lua_setJsToLua(L, jsObjID, i);	// luaToJs[stack[i]] = jsObjID
@@ -499,7 +503,7 @@ const Ltop = M._lua_gettop(L);
 				pushForJsObjID(L, jsObjID);				// stack: ..., jsToLua[jsObjID]
 //console.log('push_js returning');
 			} else {
-				jsObjID = BigInt(jsToLua.size);
+				jsObjID = ++nextJsObjId;
 //console.log("push_js didn't find any entry, using new key", jsObjID);
 
 				// TODO this is a faulty test , but good luck finding a better one
@@ -522,7 +526,7 @@ const Ltop = M._lua_gettop(L);
 				// keep up with the lua<->js map
 //console.log('push_js setting relation with key', jsObjID);
 				jsToLua.set(jsValue, jsObjID);
-				luaToJs.set(jsObjID, jsValue);
+				luaToJs.set(jsObjID, new WeakRef(jsValue));
 
 				lua_setJsToLua(L, jsObjID, -1);	// jsToLua[jsObjID] = stack[-1]
 				lua_setLuaToJs(L, -1, jsObjID);	// luaToJs[stack[-1]] = jsObjID
@@ -547,8 +551,8 @@ const lua = {
 		L = M._luaL_newstate();
 		this.L = L;	// for read access only, don't bother write, lua is a singleton and M is stored in the closure
 
-		jsToLua = new Map();
-		luaToJs = new Map();
+		jsToLua = new WeakMap();
+		luaToJs = new Map();	// Map of WeakRef
 		lua.jsToLua = jsToLua;
 		lua.luaToJs = luaToJs;
 

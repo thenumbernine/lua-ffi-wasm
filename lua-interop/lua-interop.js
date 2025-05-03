@@ -13,9 +13,12 @@ const newLuaLib = await import(jsPath);
 const M = await newLuaLib.default(args);
 
 // luaconf.h
+
 M.LUAI_MAXSTACK = 1000000;	// 32 bit
 //M.LUAI_MAXSTACK = 15000;	// 64 bit
+
 // lua.h
+
 M.LUA_MULTRET = -1;
 M.LUA_REGISTRYINDEX = -M.LUAI_MAXSTACK - 1000;
 M._lua_upvalueindex = (i) => LUA_REGISTRYINDEX - i;
@@ -40,6 +43,39 @@ M.LUA_MINSTACK = 20;
 M.LUA_RIDX_MAINTHREAD = 1;
 M.LUA_RIDX_GLOBALS = 2;
 M.LUA_RIDX_LAST = M.LUA_RIDX_GLOBALS;
+M.LUA_OPADD = 0;
+M.LUA_OPSUB = 1;
+M.LUA_OPMUL = 2;
+M.LUA_OPMOD = 3;
+M.LUA_OPPOW = 4;
+M.LUA_OPDIV = 5;
+M.LUA_OPIDIV = 6;
+M.LUA_OPBAND = 7;
+M.LUA_OPBOR = 8;
+M.LUA_OPBXOR = 9;
+M.LUA_OPSHL = 10;
+M.LUA_OPSHR = 11;
+M.LUA_OPUNM = 12;
+M.LUA_OPBNOT = 13;
+M.LUA_OPEQ = 0;
+M.LUA_OPLT = 1;
+M.LUA_OPLE = 2;
+
+M._lua_call = (L,n,r) => M._lua_callk(L, n, r, 0, 0);
+M._lua_pcall = (L, nargs, nret, msgh) => M._lua_pcallk(L, nargs, nret, msgh, 0, 0);
+M._lua_yield = (L,n) => M._lua_yieldk(L, n, 0, 0);
+
+M.LUA_GCSTOP	 = 0;
+M.LUA_GCRESTART	 = 1;
+M.LUA_GCCOLLECT	 = 2;
+M.LUA_GCCOUNT	 = 3;
+M.LUA_GCCOUNTB	 = 4;
+M.LUA_GCSTEP	 = 5;
+M.LUA_GCSETPAUSE	 = 6;
+M.LUA_GCSETSTEPMUL = 7;
+M.LUA_GCISRUNNING	 = 9;
+M.LUA_GCGEN	 = 10;
+M.LUA_GCINC	 = 11;
 
 M._lua_tonumber = (L,i) => M._lua_tonumberx(L,i,null);
 M._lua_tointeger = (L,i) => M._lua_tointegerx(L,i,null);
@@ -57,21 +93,64 @@ M._lua_isthread = (L,n) => M._lua_type(L, n) == M.LUA_TTHREAD;
 M._lua_isnone = (L,n) => M._lua_type(L, n) == M.LUA_TNONE;
 M._lua_isnoneornil = (L, n) => M._lua_type(L, n) <= 0;
 
+M._lua_pushliteral = (L, s) => M._lua_pushlstring(L, M.stringToNewUTF8(s), M.lengthBytesUTF8(s));	// it's a macro for literal C strings, so let's implement it as a macro that's for literal-JS strings.
 M._lua_pushglobaltable = (L) => M._lua_rawgeti(L, M.LUA_REGISTRYINDEX, BigInt(M.LUA_RIDX_GLOBALS));
 M._lua_tostring = (L, i) => M._lua_tolstring(L, i, 0);
 M._lua_insert = (L,idx) => { M._lua_rotate(L, idx, 1); };
 M._lua_remove = (L,idx) => { M._lua_rotate(L, idx, -1); M._lua_pop(L, 1); };
 M._lua_replace = (L,idx) => { M._lua_copy(L, -1, idx); M._lua_pop(L, 1); };
 
-M._lua_pcall = (L, nargs, nret, msgh) => M._lua_pcallk(L, nargs, nret, msgh, 0, 0);
+//#if defined(LUA_COMPAT_APIINTCASTS)
+M._lua_pushunsigned = (L,n) => M._lua_pushinteger(L, n);
+M._lua_tounsignedx = (L,i,is) => M._lua_tointegerx(L,i,is);
+M._lua_tounsigned = (L,i) => M._lua_tounsignedx(L,i,0);
+//#endif
+
+M._lua_newuserdata = (L,s) => M._lua_newuserdatauv(L,s,1);
+M._lua_getuservalue = (L,idx) => M._lua_getiuservalue(L,idx,1);
+M._lua_setuservalue = (L,idx) => M._lua_setiuservalue(L,idx,1);
+
+M.LUA_NUMTAGS = M.LUA_NUMTYPES;
+
+M.LUA_HOOKCALL = 0;
+M.LUA_HOOKRET = 1;
+M.LUA_HOOKLINE = 2;
+M.LUA_HOOKCOUNT = 3;
+M.LUA_HOOKTAILCALL = 4;
+
+M.LUA_MASKCALL = 1 << M.LUA_HOOKCALL;
+M.LUA_MASKRET = 1 << M.LUA_HOOKRET;
+M.LUA_MASKLINE = 1 << M.LUA_HOOKLINE;
+M.LUA_MASKCOUNT = 1 << M.LUA_HOOKCOUNT;
+
+// lauxlib.h
+
+M._luaL_loadfile = (L,f) => M._luaL_loadfilex(L,f,0);
+
+//needs sizeof:
+//M._luaL_newlibtable = (L,l) => M._lua_createtable(L, 0, sizeof(l)/sizeof(l[0]) - 1)
+
+M._luaL_newlib = (L,l) => { M._luaL_checkversion(L); M._luaL_newlibtable(L,l); M._luaL_setfuncs(L,l,0); };
+M._luaL_argcheck = (L, cond,arg,extramsg) => { M._luai_likely(cond); return M._luaL_argerror(L, arg, extramsg); };
+M._luaL_argexpected = (L,cond,arg,tname) => { M._luai_likely(cond); return M._luaL_typeerror(L, arg, tname); };
+M._luaL_checkstring = (L,n) => M._luaL_checklstring(L, n, 0);
+M._luaL_optstring = (L,n,d) => M._luaL_optlstring(L, n, d, 0);
 M._luaL_typename = (L,i) => M._lua_typename(L, M._lua_type(L,i));
+M._luaL_dofile = (L, fn) => M._luaL_loadfile(L, fn) || M._lua_pcall(L, 0, M.LUA_MULTRET, 0);
+M._luaL_dostring = (L, s) => M._luaL_loadstring(L, s) || M._lua_pcall(L, 0, M.LUA_MULTRET, 0);
+M._luaL_getmetatable = (L,n) => M._lua_getfield(L, M.LUA_REGISTRYINDEX, n);
+M._luaL_opt = (L,f,n,d) => M._lua_isnoneornil(L,n) ? d : f(L,n);
+M._luaL_loadbuffer = (L,s,sz,n) => M._luaL_loadbufferx(L,s,sz,n,0)
 
 // lauxlib.h
 
 M.LUA_LOADED_TABLE = M.stringToNewUTF8('_LOADED');
 
+// rest of the story
+
+let L;
+
 // unique ptrs to be used as registry keys
-window.M = M;
 const luaToJsKey = M._malloc(1);
 const jsToLuaKey = M._malloc(1);
 
@@ -146,6 +225,11 @@ const wrapper___newindex_func = M.addFunction(L => {
 	return 0;
 }, 'ip');
 
+const pushJsStr = (L, s) => {
+	const sp = M.stringToNewUTF8(s);
+	M._lua_pushlstring(L, sp, M.lengthBytesUTF8(s));
+};
+
 const wrapper___tostring_func = M.addFunction(L => {
 	const jsValue = lua_to_js(L, 1);	// optional line or just use the closure variable
 	if (jsValue === null) {
@@ -153,7 +237,7 @@ const wrapper___tostring_func = M.addFunction(L => {
 		return 1;
 	}
 
-	M._lua_pushstring(L, M.stringToNewUTF8(jsValue.toString()));
+	pushJsStr(L,jsValue.toString());
 	return 1;
 }, 'ip');
 
@@ -323,6 +407,43 @@ const callLua = (L, pushFunc, ...args) => {
 	return ret;
 };
 
+// Internal function for compiling Lua code & pushing onto Lua stack.
+// s, name, mode = JS strings.
+// Uses the JS file:line as the default chunk name.
+const loadBuffer = (s, name, mode) => {
+	const sptr = M.stringToNewUTF8(s);
+	return M._luaL_loadbufferx(
+		L,
+		sptr,
+		M.lengthBytesUTF8(s),
+		M.stringToNewUTF8(
+			name
+			? name
+			// luaL_loadbuffer: defaults the module name to the incoming code string.
+			//: sptr,
+			// or maybe it'd be more helpful to default this to the current JS trace location.
+			//: new Error().stack.toString()
+			// ... but that is too long, so lets skip the "Error\n     at "
+			//: /at (.*)/g.exec(new Error().stack.toString())[1]
+			// ... also too long
+			: (() => {
+				// What will they think of next to avoid just giving us an array containing the info of the actual stack.
+				const obj = {};
+				Error.captureStackTrace(obj, loadBuffer);
+				let loc = /at (.*)/g.exec(obj.stack.toString())[1]+'';
+				// Next problem: the filename at loc is a fully qualified URL, and the Lua stack trace doesn't have that much room.
+				// I'll just strip out all the host and path, leaving only the file.
+				loc = /[^\/]*$/g.exec(loc)[0]+'';
+				// something wrapping this in `[string "..."]`- I suspect it's Lua ...
+				return loc;
+			})()
+		),
+		mode ? M.stringToNewUTF8(mode) : 0	//NULL
+	);
+};
+
+
+
 // What our proxy target is.
 // Not used for anything except maybe enabling the `apply` operator.
 const jsProxyTarget = () => {};
@@ -486,7 +607,7 @@ const Ltop = M._lua_gettop(L);
 		M._lua_pushinteger(L, jsValue);
 		break;
 	case 'string':
-		M._lua_pushstring(L, M.stringToNewUTF8(jsValue));	// stack: ..., jsValue
+		pushJsStr(L, jsValue);	// stack: ..., jsValue
 		break;
 	case 'function':
 	case 'object':
@@ -543,7 +664,6 @@ console.log('push_js unknown lua type', t, jsValue);
 const Ntop = M._lua_gettop(L); if (Ntop !== Ltop+1) throw "top before: "+Ltop+" after: "+Ntop;
 };
 
-let L;
 const lua = {
 	lib : M,
 
@@ -557,20 +677,20 @@ const lua = {
 		lua.luaToJs = luaToJs;
 
 		// set metatable to {__mode='v'}
-		const setTopToWeakTable = () => {
+		const setTopToWeakTable = (mode) => {
 			M._lua_newtable(L);
-			M._lua_pushstring(L, M.stringToNewUTF8('v'));
+			M._lua_pushstring(L, M.stringToNewUTF8(mode));
 			M._lua_setfield(L, -2, M.stringToNewUTF8('__mode'));
 			M._lua_setmetatable(L, -2);
 		};
 
 		// TODO use registery instead of globals
 		M._lua_newtable(L);
-		setTopToWeakTable();
+		setTopToWeakTable('v');
 		setRegistry(L, jsToLuaKey);
 
 		M._lua_newtable(L);
-		setTopToWeakTable();
+		setTopToWeakTable('k');
 		setRegistry(L, luaToJsKey);
 
 		// setup wrapper metatable
@@ -690,8 +810,10 @@ const lua = {
 	},
 
 	// Loads Lua code, returns a JS function that executes it.
-	load : function(s) {
-		const result = M._luaL_loadstring(L, M.stringToNewUTF8(s));
+	load : function(s, name, mode) {
+		//const result = M._luaL_loadstring(L, M.stringToNewUTF8(s));
+
+		const result = loadBuffer(s, name, mode);
 		if (result != M.LUA_OK) {
 			const msg = M.UTF8ToString(M._lua_tostring(L, -1));
 			M._lua_pop(L, 1);
@@ -716,7 +838,7 @@ const lua = {
 	//
 	doString : function(s, ...args) {
 		return callLua(L, (L, Ltop) => {
-			const result = M._luaL_loadstring(L, M.stringToNewUTF8(s));
+			const result = loadBuffer(s);
 			if (result != M.LUA_OK) {
 				const msg = M.UTF8ToString(M._lua_tostring(L, -1));
 

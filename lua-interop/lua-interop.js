@@ -407,6 +407,18 @@ const callLua = (L, pushFunc, ...args) => {
 	return ret;
 };
 
+// https://stackoverflow.com/a/3806596/2714073
+const getCaller = (depth) => {
+	let err;
+	try { throw Error('') } catch(_e) { err = _e; }
+	const caller_line = err.stack.split("\n")[depth+4];
+	const index = caller_line.indexOf("at ");
+	const clean = caller_line.slice(index+2, caller_line.length);
+	// oops, too many https://domainname/path/file for Lua errors to hold
+	const clean2 = clean.split('/').slice(-1)[0];
+	return clean2;
+}
+
 // Internal function for compiling Lua code & pushing onto Lua stack.
 // s, name, mode = JS strings.
 // Uses the JS file:line as the default chunk name.
@@ -422,26 +434,11 @@ const loadBuffer = (s, name, mode) => {
 			// luaL_loadbuffer: defaults the module name to the incoming code string.
 			//: sptr,
 			// or maybe it'd be more helpful to default this to the current JS trace location.
-			//: new Error().stack.toString()
-			// ... but that is too long, so lets skip the "Error\n     at "
-			//: /at (.*)/g.exec(new Error().stack.toString())[1]
-			// ... also too long
-			: (() => {
-				// What will they think of next to avoid just giving us an array containing the info of the actual stack.
-				const obj = {};
-				Error.captureStackTrace(obj, loadBuffer);
-				let loc = /at (.*)/g.exec(obj.stack.toString())[1]+'';
-				// Next problem: the filename at loc is a fully qualified URL, and the Lua stack trace doesn't have that much room.
-				// I'll just strip out all the host and path, leaving only the file.
-				loc = /[^\/]*$/g.exec(loc)[0]+'';
-				// something wrapping this in `[string "..."]`- I suspect it's Lua ...
-				return loc;
-			})()
+			: getCaller(2)	// +1 more to skip past the lua-interop function load/doString
 		),
 		mode ? M.stringToNewUTF8(mode) : 0	//NULL
 	);
 };
-
 
 
 // What our proxy target is.

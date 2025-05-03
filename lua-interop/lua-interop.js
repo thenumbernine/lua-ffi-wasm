@@ -687,7 +687,7 @@ const lua = {
 		setRegistry(L, jsToLuaKey);
 
 		M._lua_newtable(L);
-		setTopToWeakTable('k');
+		setTopToWeakTable('v');	// 'k'? how come 'k' loses me objects?
 		setRegistry(L, luaToJsKey);
 
 		// setup wrapper metatable

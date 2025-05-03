@@ -1,12 +1,10 @@
-Lua + luaffifb + emscripten's SDL / GLES to WASM -- used a browser port of my LuaJIT + OpenGL + SDL framework.
+Lua + luaffifb + emscripten's SDL / GLES to WASM -- used a browser port of my LuaJIT + OpenGL + SDL framework, found [here](https://github.com/thenumbernine/glapp-js).
 
-Lua is 100% vanilla Lua 5.4.7.
+The Lua implementation is Lua 5.4.7, no modifications.
 
-FFI support is by my [fork](https://github.com/thenumbernine/luaffifb) of the now-archived [luaffifb](https://github.com/facebookarchive/luaffifb) project.
+The FFI support is from my [fork](https://github.com/thenumbernine/luaffifb) of the now-archived [luaffifb](https://github.com/facebookarchive/luaffifb) project.
 
-[Emscripten](https://emscripten.org) is providing the WASM compiling as well as the SDL, GLES, LibPNG, etc libraries.
-
-Emscripten is also providing `dlsym` support for the FFI.
+[Emscripten](https://emscripten.org) is providing the WASM compiling as well as the SDL, GLES, LibPNG, etc libraries.  Emscripten is also providing `dlsym` support for the FFI.
 
 This repo contains a Makefile for compiling, the submodules, and the lua-interop layer JavaScript file.
 
@@ -53,11 +51,11 @@ echo '#define FFI_TARGET_HAS_COMPLEX_TYPE' >> include/ffitarget.h
 
 <hr>
 
-# lua-interop.js
+# Lua Interop API
 
 Now that you've got your `lua-5.4.7-with-ffi.js` and `.wasm` files, that's great,
 but nobody wants to push bytes back and forth into the WASM API.
-The `lua-interopj.s` file is a JavaScript/Lua interop library that sits on top of this.  I tried sticking to Fengari or WasMoon as much as possible.
+The [`lua-interop.js`](https://github.com/thenumbernine/lua-ffi-wasm/blob/master/lua-interop/lua-interop.js) file is a JavaScript/Lua interop library that sits on top of this.  I tried sticking to the Fengari or WasMoon API as much as possible.
 
 Initialization:
 ``` javascript

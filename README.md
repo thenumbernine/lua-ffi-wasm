@@ -64,7 +64,7 @@ const lua = await newLua({
 	//... your Emscripten Module args go here ...
 });
 lua.newState();	// create your initial lua_State
-lua.doString(`
+lua.run(`
 print'Hello, World!'
 `);				// run Lua code in JavaScript
 ```
@@ -96,7 +96,7 @@ Currently the Lua state is a bit of a singleton, so calling this successive time
 
 `lua.load(code, [name, mode])` = Compiles the Lua code into a Lua function and returns a JavaScript function wrapping it.  Equivalent of `luaL_loadbufferx` but with conversion of the JavaScript string.
 
-`lua.doString(code, ...args)` = Compiles the Lua code into a Lua function and calls it with `args` passed into it.
+`lua.run(code, ...args)` = Compiles the Lua code into a Lua function and calls it with `args` passed into it.
 This is shorthand for `lua.load(code)(...args)`, except that the overhead of creating an extra JavaScript wrapper is avoided.
 
 `lua._G()` = Returns the Lua `_G` global table to JavaScript.

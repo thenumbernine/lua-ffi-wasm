@@ -434,7 +434,7 @@ const loadBuffer = (s, name, mode) => {
 			// luaL_loadbuffer: defaults the module name to the incoming code string.
 			//: sptr,
 			// or maybe it'd be more helpful to default this to the current JS trace location.
-			: getCaller(2)	// +1 more to skip past the lua-interop function load/doString
+			: getCaller(2)	// +1 more to skip past the lua-interop function load/run
 		),
 		mode ? M.stringToNewUTF8(mode) : 0	//NULL
 	);
@@ -830,10 +830,10 @@ const lua = {
 	// Returns a JS array of the Lua function results.
 	// Throws the message upon error.
 	//
-	// Really ... this is redundant.  Just use lua.load(s)(...args).
-	// Just maybe this has less overhead because it's not creating a proxy function object, but it's making proxies for all the arguments anyways so meh.
+	// This is shorthand for lua.load(s)(...args),
+	// but with less overhead because it's not creating a proxy function object.
 	//
-	doString : function(s, ...args) {
+	run : function(s, ...args) {
 		return callLua(L, (L, Ltop) => {
 			const result = loadBuffer(s);
 			if (result != M.LUA_OK) {

@@ -177,6 +177,7 @@ DIST_SRCS+= $(LIBFFI_SRCS)
 	#LDFLAGS+= -s LEGACY_GL_EMULATION=1
 	#LDFLAGS+= -s GL_UNSAFE_OPTS=1
 	#LDFLAGS+= -s GL_FFP_ONLY=1
+	#LDFLAGS+= -s USE_GLFW=3		# this link says he uses it with glfw, maybe that'll fix emscripten's linking?   and nope.   https://github.com/emscripten-core/emscripten/issues/3242#issue-60616057 
 
 .PHONY: all
 all: $(DIST)

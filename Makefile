@@ -17,10 +17,25 @@ LIBFFI_SRCS = $(patsubst %, libffi/%, \
 	src/debug.c \
 	src/wasm32/ffi.c \
 )
-LIBFFI_OBJS = $(patsubst %.c, %$(O), $(LIBFFI_SRCS))
+LIBFFI_CFLAGS = -I libffi/src/wasm32/include/ -I libffi/src/wasm32 -I libffi/include 
 
-# how does evaluation work
+# how does evaluation work?  do i have to redo DIST_OBJs too? or is expansion deferred or whatever?
 DIST_SRCS+= $(LIBFFI_SRCS)
+
+# btw which of these do I need? and what ones did I miss?
+# I saw it had a cmake ... cmake is great for typing `mkdir build && cd build && cmake ..`
+# but cmake is absolute trash for trying to accomplish anything, like, oh, read the contents of the varibale that says what source files are being compiled...
+# ... list taken from gl4es/src/CMakeLists.txt
+GL4ES_SRCS = $(patsubst %, gl4es/src/%, \
+	gl/arbconverter.c gl/arbgenerator.c gl/arbhelper.c gl/arbparser.c gl/array.c gl/blit.c gl/blend.c gl/buffers.c gl/build_info.c gl/debug.c gl/decompress.c gl/depth.c gl/directstate.c gl/drawing.c gl/enable.c gl/envvars.c gl/eval.c gl/face.c gl/fog.c gl/fpe.c gl/fpe_cache.c gl/fpe_shader.c gl/framebuffers.c gl/gl_lookup.c gl/getter.c gl/gl4es.c gl/glstate.c gl/hint.c gl/init.c gl/light.c gl/line.c gl/list.c gl/listdraw.c gl/listrl.c gl/loader.c gl/logs.c gl/matrix.c gl/matvec.c gl/oldprogram.c gl/pixel.c gl/planes.c gl/pointsprite.c gl/preproc.c gl/program.c gl/queries.c gl/raster.c gl/render.c gl/samplers.c gl/shader.c gl/shaderconv.c gl/shader_hacks.c gl/stack.c gl/stencil.c gl/string_utils.c gl/stubs.c gl/texenv.c gl/texgen.c gl/texture.c gl/texture_compressed.c gl/texture_params.c gl/texture_read.c gl/texture_3d.c gl/uniform.c gl/vertexattrib.c gl/wrap/gl4eswraps.c gl/wrap/gles.c gl/wrap/glstub.c gl/math/matheval.c \
+	glx/hardext.c \
+)
+# Still not sure if this should be here for Makefile-native or just for Makefile(-wasm)
+# Only -wasm needs it.
+GL4ES_CFLAGS = -DNOX11=ON -DNOEGL=ON -DSTATICLIB=ON -I gl4es/include/
+
+# add gl4es for GL 2 API compatability
+DIST_SRCS+= $(GL4ES_SRCS)
 
 
 
@@ -177,17 +192,20 @@ clean:
 # 3) now libffi/src/wasm32/include/ has the good ffi.h and ffitarget.h
 #
 libffi/%.o: libffi/%.c
-	$(CC) $(CFLAGS) -c -I libffi/src/wasm32/include/ -I libffi/src/wasm32 -I libffi/include -o $@ $^
+	$(CC) $(CFLAGS) $(LIBFFI_CFLAGS) -c -o $@ $^
 
 # compile rule for luaffifb:
 # make sure you have generated libffi's ffi.h for wasm already, as per README.md says
 # make sure the include dir order matches libffi/ above, in order to use the same ffitarget.h
 luaffifb/%.o: luaffifb/%.c
-	$(CC) $(CFLAGS) -c -I lua/ -I libffi/src/wasm32/include -I libffi/src/wasm32 -DCALL_WITH_LIBFFI -o $@ $^
+	$(CC) $(CFLAGS) $(LUAFFIFB_CFLAGS) -c -o $@ $^
 
 #CFLAGS+=  -std=gnu99
 lua/%.o: lua/%.c
-	$(CC) $(CFLAGS) -c -DLUA_COMPAT_5_3 -I lua/ -o $@ $^
+	$(CC) $(CFLAGS) $(LUA_CFLAGS) -c -o $@ $^
+
+gl4es/%.o: gl4es/%.c
+	$(CC) $(CFLAGS) $(GL4ES_CFLAGS) -c -o $@ $^
 
 # compile rule for all:
 %.o: %.c

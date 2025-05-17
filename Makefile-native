@@ -35,10 +35,10 @@ clean:
 	-rm $(DIST_OBJS) $(DIST)
 
 luaffifb/%.o: luaffifb/%.c
-	$(CC) $(CFLAGS) -c -I lua/ -I libffi/src/wasm32/include -I libffi/src/wasm32 -DCALL_WITH_LIBFFI -o $@ $^
+	$(CC) $(CFLAGS) $(LUAFFIFB_CFLAGS) -c -o $@ $^
 
 lua/%.o: lua/%.c
-	$(CC) $(CFLAGS) -c -DLUA_COMPAT_5_3 -I lua/ -o $@ $^
+	$(CC) $(CFLAGS) $(LUA_CFLAGS) -c -o $@ $^
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $^

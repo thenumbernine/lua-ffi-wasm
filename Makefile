@@ -19,8 +19,27 @@ LIBFFI_SRCS = $(patsubst %, libffi/%, \
 )
 LIBFFI_CFLAGS = -I libffi/src/wasm32/include/ -I libffi/src/wasm32 -I libffi/include
 
+# https://stackoverflow.com/a/23324703/2714073
+#CWD := $(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
+# just dont run make from another dir ...
+CWD = $(strip $(shell pwd))
+
+# I could put this in Files.mk, but the native binary can also just ffi.load cimgui, so why static-link it? so put it here.
+CIMGUI_SRCS = $(patsubst %, cimgui/%, \
+	cimgui.cpp \
+	imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_demo.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp \
+	imgui/backends/imgui_impl_opengl3.cpp imgui/backends/imgui_impl_sdl2.cpp \
+)
+
+CIMGUI_CFLAGS = -std=c++20 -DIMGUI_IMPL_API=extern\ \"C\" -I $(CWD)/cimgui -iquote $(CWD)/cimgui/imgui
+
 # how does evaluation work?  do i have to redo DIST_OBJs too? or is expansion deferred or whatever?
-DIST_SRCS+= $(LIBFFI_SRCS)
+DIST_SRCS+= $(LIBFFI_SRCS) $(CIMGUI_SRCS)
+DIST_OBJS= $(patsubst %.c, %$(O), \
+	$(patsubst %.cpp, %$(O), $(DIST_SRCS)) \
+)
+
+
 
 # I would like to test this, but it keeps its own names, and requires you to access them through its own GetProcAddress function ...
 #
@@ -177,7 +196,7 @@ DIST_SRCS+= $(LIBFFI_SRCS)
 	#LDFLAGS+= -s LEGACY_GL_EMULATION=1
 	#LDFLAGS+= -s GL_UNSAFE_OPTS=1
 	#LDFLAGS+= -s GL_FFP_ONLY=1
-	#LDFLAGS+= -s USE_GLFW=3		# this link says he uses it with glfw, maybe that'll fix emscripten's linking?   and nope.   https://github.com/emscripten-core/emscripten/issues/3242#issue-60616057 
+	#LDFLAGS+= -s USE_GLFW=3		# this link says he uses it with glfw, maybe that'll fix emscripten's linking?   and nope.   https://github.com/emscripten-core/emscripten/issues/3242#issue-60616057
 
 .PHONY: all
 all: $(DIST)
@@ -213,8 +232,12 @@ luaffifb/%.o: luaffifb/%.c
 lua/%.o: lua/%.c
 	$(CC) $(CFLAGS) $(LUA_CFLAGS) -c -o $@ $^
 
-gl4es/%.o: gl4es/%.c
-	$(CC) $(CFLAGS) $(GL4ES_CFLAGS) -c -o $@ $^
+cimgui/%.o: cimgui/%.cpp
+	$(CC) $(CFLAGS) $(CIMGUI_CFLAGS) -c -o $@ $^
+
+# nahhh not any more
+#gl4es/%.o: gl4es/%.c
+#	$(CC) $(CFLAGS) $(GL4ES_CFLAGS) -c -o $@ $^
 
 # compile rule for all:
 %.o: %.c

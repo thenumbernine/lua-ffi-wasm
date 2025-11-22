@@ -13,6 +13,7 @@ This repo contains a Makefile for compiling, the submodules, and the lua-interop
 1) Ensure you have the required packages: Emscripten at the moment, and GNU Make.  Sorry CMake fans.
 2) Checkout submodules: `git submodule update --init --recursive`
 3) Configure LibFFI with Emscripten on your machine, as described below.
+4) Copy `lauxlib.h luaconf.h lua.h lualib.h` from `lua/` to `lua-5.4/` (due to some include search problems with luaffifb versus system Lua include files...)
 4) `make`
 
 This produces `lua-5.4.7-with-ffi.js` and `lua-5.4.7-with-ffi.wasm`.

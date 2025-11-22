@@ -169,9 +169,9 @@ DIST_OBJS= $(patsubst %.c, %$(O), \
 	#LDFLAGS+= -s DEFAULT_TO_CXX=0		# if MAIN_MODULE/SIDE_MODULE isn't used then setting this to 0 will stop the _ underscore in front of C funciton names. fucking retarded.
 	LDFLAGS+= -s ALLOW_TABLE_GROWTH=1	# need this for adding functions at runtime
 	LDFLAGS+= -s ALLOW_MEMORY_GROWTH=1	# otherwise my apps die after a few seconds ... I suspect whenever memory grows, something gets invalidated and my next lua coroutine resume errors with "memory out of bounds"
-	LDFLAGS+= -s INITIAL_MEMORY=3900mb
+	#LDFLAGS+= -s INITIAL_MEMORY=3900mb	# NOTICE necessary but i'm getting "not enough memory" errors with WASM so how tf do you make emscripten allocate ONLY THE MEMORY IT NEEDS, NOT TOO MUCH TO CRASH OUT, NOT TOO LITTLE TO CRASH OUT!!! FUCKING HELL I HATE EMSCRIPTEN
 	#LDFLAGS+= -s INITIAL_HEAP=1gb		# can't do this because nonsense
-	LDFLAGS+= -s STACK_SIZE=5mb				# default is 64kb
+	#LDFLAGS+= -s STACK_SIZE=5mb		# default is 64kb.  NOTICE same as INITIAL_MEMORY
 	LDFLAGS+= -s MIN_WEBGL_VERSION=2
 	LDFLAGS+= -s MAX_WEBGL_VERSION=2
 	LDFLAGS+= -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=1	# idk, seems even tho the main draw of emscripten is gles<->webgl + sdl + c++ programming, seems the webgl version of things is pretty shitty

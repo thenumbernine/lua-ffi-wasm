@@ -12,7 +12,7 @@ LUA_CFLAGS = -DLUA_COMPAT_5_3 -I lua/
 LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \
 	call.c ctype.c ffi.c ffi_complex.c lua.c parser.c \
 )
-LUAFFIFB_CFLAGS = -I lua/ -I libffi/src/wasm32/include -I libffi/src/wasm32 -DCALL_WITH_LIBFFI 
+LUAFFIFB_CFLAGS = -I . -I lua/ -I luaffifb/ -I libffi/src/wasm32/include -I libffi/src/wasm32 -DCALL_WITH_LIBFFI
 
 # this is going to be a pain to configure and compile ... so I haven't yet ...
 # I'm just using this one https://github.com/chhu/gnuplot-JS for now

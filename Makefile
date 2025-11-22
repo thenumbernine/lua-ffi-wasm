@@ -156,6 +156,8 @@ DIST_OBJS= $(patsubst %.c, %$(O), \
 	LDFLAGS+= -s WASM=1
 	#CFLAGS+= -s MEMORY64=1			# This will make you need to change every function arg from js -> emcc to wrap in BigInt, which is frustrating and absurd ...
 	#LDFLAGS+= -s MEMORY64=1			# But hopefully enabling it will make it so underlying lua integers are not 32bit.
+	#LDFLAGS+= -s WASM_BIGINT=1		# Google AI said this would fix the fact that HEAPU64 is missing.  emscripten changed something in the last year / when i went from osx to linux, where before i had 64-bit number support but not 64-bit memory support, and now i get both or neither..... oh in fact, this was always enabled-by-default, so is my linux emscripten really that old? 
+	LDFLAGS+= -s MAXIMUM_MEMORY=2GB	# stupid internal emscripten bug, fixed with https://github.com/emscripten-core/emscripten/issues/20183
 	LDFLAGS+= --no-entry
 	CFLAGS+= -s MAIN_MODULE=1		# I need this to use dlopen/dlsym
 	LDFLAGS+= -s MAIN_MODULE=1

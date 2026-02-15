@@ -27,10 +27,11 @@ Right now `luaffifb` provides the FFI library to vanilla-Lua, however `luaffifb`
 I am avoiding JIT for the sake of my WASM target platform.  So to get around this I am hacking in [libffi](https://github.com/libffi/libffi) calling into my `luaffifb` port.
 
 Configuring LibFFI:
+Make sure you have `autoconf` and `libtool`, and run the following:
 ```
 cd libffi
 emconfigure autoreconf -v -i
-cd src/wasm32
+cd src/wasm
 emconfigure ../../configure
 ```
 
@@ -49,6 +50,8 @@ And then we add our complex support macro, because the generated one had that, b
 ```
 echo '#define FFI_TARGET_HAS_COMPLEX_TYPE' >> include/ffitarget.h
 ```
+
+And then sometimes `libffi/src/tramp.c` doesn't compile because it's only set up for linux for other, so for all the `#if defined (__linux__)` be sure to add at the end `|| defined (__EMSCRIPTEN__)`
 
 <hr>
 

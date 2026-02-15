@@ -6,7 +6,7 @@ include Files.mk
 
 # libffi has its own emscripten configure and build
 # but what it spits out isn't "relocatable" i.e. I can't just link it below
-# so here's what I found in the libffi/src/wasm32/Makefile:
+# so here's what I found in the libffi/src/wasm/Makefile:
 LIBFFI_SRCS = $(patsubst %, libffi/%, \
 	src/prep_cif.c \
 	src/types.c \
@@ -15,9 +15,9 @@ LIBFFI_SRCS = $(patsubst %, libffi/%, \
 	src/closures.c \
 	src/tramp.c \
 	src/debug.c \
-	src/wasm32/ffi.c \
+	src/wasm/ffi.c \
 )
-LIBFFI_CFLAGS = -I libffi/src/wasm32/include/ -I libffi/src/wasm32 -I libffi/include
+LIBFFI_CFLAGS = -I libffi/src/wasm/include/ -I libffi/src/wasm -I libffi/include
 
 # https://stackoverflow.com/a/23324703/2714073
 #CWD := $(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
@@ -28,7 +28,7 @@ CWD = $(strip $(shell pwd))
 CIMGUI_SRCS = $(patsubst %, cimgui/%, \
 	cimgui.cpp \
 	imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_demo.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp \
-	imgui/backends/imgui_impl_opengl3.cpp imgui/backends/imgui_impl_sdl2.cpp \
+	imgui/backends/imgui_impl_opengl3.cpp imgui/backends/imgui_impl_sdl3.cpp \
 )
 
 CIMGUI_CFLAGS = -std=c++20 -DIMGUI_IMPL_API=extern\ \"C\" -I $(CWD)/cimgui -iquote $(CWD)/cimgui/imgui
@@ -183,8 +183,8 @@ DIST_OBJS= $(patsubst %.c, %$(O), \
 	LDFLAGS+= -s USE_LIBPNG=1
 	CFLAGS+= -s USE_LIBJPEG=1
 	LDFLAGS+= -s USE_LIBJPEG=1
-	CFLAGS+= -s USE_SDL=2
-	LDFLAGS+= -s USE_SDL=2
+	CFLAGS+= -s USE_SDL=3
+	LDFLAGS+= -s USE_SDL=3
 	LDFLAGS+= -s ENVIRONMENT="web"
 	#LDFLAGS+= -s WASM_ASYNC_COMPILATION=0	# js init complains if I disable this
 	#LDFLAGS+= -s ERROR_ON_UNDEFINED_SYMBOLS=0	# because emscripten wants some internal function __syscall_mprotect but it's internal to emscripten so it just errors for no fucking reason
@@ -210,16 +210,16 @@ clean:
 
 # compile rule for libffi, which needs some extra includes...
 #
-# ok there's libffi/src/wasm32/ffitarget.h that comes with libffi
-# and there's libffi/src/wasm32/include/ffitarget.h that is generated from `emconfigure autoreconf -v -i && cd src/wasm32 && emconfigure ../../configure`
+# ok there's libffi/src/wasm/ffitarget.h that comes with libffi
+# and there's libffi/src/wasm/include/ffitarget.h that is generated from `emconfigure autoreconf -v -i && cd src/wasm32 && emconfigure ../../configure`
 # and the dynamically generated one should be more legit right? after all, we have to dynamically generate the ffi.h because it's just not there to begin with
 # and neither is good.
-# the generated libffi/src/wasm32/include/ffitarget.h has complex support but not extra fields, which makes the libffi code fail to compile.
-# the builtin libffi/src/wasm32/ffitarget.h has extra ffi_cif fields defined but no complex support, which makes the luaffifb code fail to link.
+# the generated libffi/src/wasm/include/ffitarget.h has complex support but not extra fields, which makes the libffi code fail to compile.
+# the builtin libffi/src/wasm/ffitarget.h has extra ffi_cif fields defined but no complex support, which makes the luaffifb code fail to link.
 # looks like I will be generating it by hand ...
-# 1) copy libffi/src/wasm32/ffitarget.h libffi/src/wasm32/include/ffitarget.h
-# 2) add the line tot he top: `#define FFI_TARGET_HAS_COMPLEX_TYPE`
-# 3) now libffi/src/wasm32/include/ has the good ffi.h and ffitarget.h
+# 1) copy libffi/src/wasm/ffitarget.h libffi/src/wasm/include/ffitarget.h
+# 2) add the line to the top: `#define FFI_TARGET_HAS_COMPLEX_TYPE`
+# 3) now libffi/src/wasm/include/ has the good ffi.h and ffitarget.h
 #
 libffi/%.o: libffi/%.c
 	$(CC) $(CFLAGS) $(LIBFFI_CFLAGS) -c -o $@ $^

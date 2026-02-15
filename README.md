@@ -51,7 +51,7 @@ And then we add our complex support macro, because the generated one had that, b
 echo '#define FFI_TARGET_HAS_COMPLEX_TYPE' >> include/ffitarget.h
 ```
 
-And then sometimes `libffi/src/tramp.c` doesn't compile because it's only set up for linux for other, so for all the `#if defined (__linux__)` be sure to add at the end `|| defined (__EMSCRIPTEN__)`
+And then in `libffi/src/wasm/fficonfig.h` and in `libffi/src/wasm/include/fficonfig.h`, replace `#define FFI_EXEC_STATIC_TRAMP 1` with `#undef FFI_EXEC_STATIC_TRAMP`. 
 
 <hr>
 

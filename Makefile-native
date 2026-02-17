@@ -9,7 +9,7 @@ include Files.mk
 # But FFI is built into the binary.
 # So load it with this line:
 #
-# > package.loaded.ffi = package.loadlib('lua.out', 'luaopen_ffi')()
+# > package.loaded.ffi = package.loadlib('', 'luaopen_ffi')()
 
 CC=clang
 O=.o
@@ -22,6 +22,12 @@ LDFLAGS+= -lffi
 
 # lua/ needs -lm
 LDFLAGS+= -lm
+
+# will this get luaopen_ffi seen by dlsym?
+# yes, this fixed it.
+# but this lets everything be seen, regardless of extern / __attribute__((visibility("default")))
+# meh
+LDFLAGS += -rdynamic
 
 CFLAGS+= -DLUA_USE_LINUX
 #CFLAGS+= -DLUA_USE_MACOSX

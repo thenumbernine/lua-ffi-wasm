@@ -20,8 +20,11 @@ LUA_SRCS+= lua/lua.c
 # my libffi branch is configured for wasm32 so here I am using the builtin.
 LDFLAGS+= -lffi
 
-#CFLAGS+= -DLUA_USE_LINUX
-CFLAGS+= -DLUA_USE_MACOSX
+# lua/ needs -lm
+LDFLAGS+= -lm
+
+CFLAGS+= -DLUA_USE_LINUX
+#CFLAGS+= -DLUA_USE_MACOSX
 #CFLAGS+= -DLUA_USE_IOS
 #CFLAGS+= -DLUA_USE_WINDOWS
 

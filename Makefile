@@ -19,6 +19,9 @@ LIBFFI_SRCS = $(patsubst %, libffi/%, \
 )
 LIBFFI_CFLAGS = -I libffi/src/wasm/include/ -I libffi/src/wasm -I libffi/include
 
+# luaffifb will use libffi
+LUAFFIFB_CFLAGS += -I libffi/src/wasm/include -I libffi/src/wasm
+
 # https://stackoverflow.com/a/23324703/2714073
 #CWD := $(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
 # just dont run make from another dir ...

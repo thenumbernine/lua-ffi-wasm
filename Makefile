@@ -237,6 +237,9 @@ luaffifb/%.o: luaffifb/%.c
 lua/%.o: lua/%.c
 	$(CC) $(CFLAGS) $(LUA_CFLAGS) -c -o $@ $^
 
+lua-patch/%.o: lua-patch/%.c
+	$(CC) $(CFLAGS) $(LUA_CFLAGS) -c -o $@ $^
+
 cimgui/%.o: cimgui/%.cpp
 	$(CC) $(CFLAGS) $(CIMGUI_CFLAGS) -c -o $@ $^
 

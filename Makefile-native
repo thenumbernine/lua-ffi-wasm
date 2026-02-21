@@ -49,6 +49,9 @@ luaffifb/%.o: luaffifb/%.c
 lua/%.o: lua/%.c
 	$(CC) $(CFLAGS) $(LUA_CFLAGS) -c -o $@ $^
 
+lua-patch/%.o: lua-patch/%.c
+	$(CC) $(CFLAGS) $(LUA_CFLAGS) -c -o $@ $^
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 

@@ -1,18 +1,26 @@
 # Lua 5.4.7
 LUA_SRCS = $(patsubst %, lua/%, \
 	lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c \
-	lfunc.c lgc.c llex.c lmem.c lobject.c lopcodes.c lparser.c \
+	lfunc.c lgc.c lmem.c lopcodes.c lparser.c \
 	lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c \
 	lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c \
-	loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c linit.c \
+	loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c \
 )
-LUA_CFLAGS = -DLUA_COMPAT_5_3 -I lua/
+LUA_SRCS += $(patsubst %, lua-patch/%, \
+	lobject.c linit.c llex.c \
+)
+LUA_CFLAGS = \
+	-DLUA_COMPAT_5_3 \
+	-I `pwd`/lua/
 
 # LuaFFI-FB but with the calling replaced with libffi calling (so I guess I just liked their cdefs parser...  and bit field support .. but their pointer support is limited, only 3 nested ...)
 LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \
 	call.c ctype.c ffi.c ffi_complex.c lua.c parser.c \
 )
-LUAFFIFB_CFLAGS = -I lua/ -I luaffifb/ -DCALL_WITH_LIBFFI
+LUAFFIFB_CFLAGS = \
+	-I `pwd`/lua/ \
+	-I `pwd`/luaffifb/ \
+	-DCALL_WITH_LIBFFI
 
 # this is going to be a pain to configure and compile ... so I haven't yet ...
 # I'm just using this one https://github.com/chhu/gnuplot-JS for now

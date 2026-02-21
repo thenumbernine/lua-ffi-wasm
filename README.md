@@ -8,6 +8,13 @@ The FFI support is from my [fork](https://github.com/thenumbernine/luaffifb) of 
 
 This repo contains a Makefile for compiling, the submodules, and the lua-interop layer JavaScript file.
 
+Also this has some lua patch files in `lua-patch/` for doing the following:
+- loading `luaopen_ffi` on startup so that `require 'ffi'` works.
+- ignoring `LL` / `ULL` suffixes on numbers.  Maybe I'll get around to boxing them in `int64_t`/`uint64_t` cdata
+patch TODO:
+- take all the luaffifb modifications and just cram them straight into Lua.
+- add support for comparing cdata pointers with nil so `(void*)NULL == nil` returns true.
+
 # Compiling:
 
 1) Ensure you have the required packages: Emscripten at the moment, and GNU Make.  Sorry CMake fans.
@@ -51,7 +58,7 @@ And then we add our complex support macro, because the generated one had that, b
 echo '#define FFI_TARGET_HAS_COMPLEX_TYPE' >> include/ffitarget.h
 ```
 
-And then in `libffi/src/wasm/fficonfig.h` and in `libffi/src/wasm/include/fficonfig.h`, replace `#define FFI_EXEC_STATIC_TRAMP 1` with `#undef FFI_EXEC_STATIC_TRAMP`. 
+And then in `libffi/src/wasm/fficonfig.h` and in `libffi/src/wasm/include/fficonfig.h`, replace `#define FFI_EXEC_STATIC_TRAMP 1` with `#undef FFI_EXEC_STATIC_TRAMP`.
 
 <hr>
 

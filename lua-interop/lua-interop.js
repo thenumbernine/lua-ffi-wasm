@@ -182,7 +182,7 @@ const str_ffi = M.stringToNewUTF8('ffi');
 
 // maps from js objects to some kind of index to look up lua object in lua table
 // meanwhile we have a jsToLua table in Lua that maps these indexes to tables
-let nextJsObjId = 1;
+let nextJsObjId = 1n;
 let jsToLua, luaToJs;
 
 

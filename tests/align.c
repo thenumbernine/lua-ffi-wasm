@@ -5,53 +5,36 @@
 #include <stdint.h>
 
 int main() {
-	
+	printf("offsetof(a) offsetof(b) sizeof()\n");	
 	typedef struct S1 {
 		uint8_t a;
 		uint8_t b;
 	} S1;
-	printf("offsetof(S1, a) %ld\n", offsetof(S1, a));
-	printf("offsetof(S1, b) %ld\n", offsetof(S1, b));
-	printf("sizeof(S1) %ld\n", sizeof(S1));
-	printf("\n");
+	printf("S1\t%ld\t%ld\t%ld\n", offsetof(S1, a), offsetof(S1, b), sizeof(S1));
 
 	// alignof per field
 	typedef struct S2 {
 		uint8_t __attribute__((__aligned__(8))) a;
 		uint8_t __attribute__((__aligned__(8))) b;
 	} S2;
-	printf("offsetof(S2, a) %ld\n", offsetof(S2, a));
-	printf("offsetof(S2, b) %ld\n", offsetof(S2, b));
-	printf("sizeof(S2) %ld\n", sizeof(S2));
-	printf("\n");
+	printf("S2\t%ld\t%ld\t%ld\n", offsetof(S2, a), offsetof(S2, b), sizeof(S2));
 
 	// alignof per composite field
 	typedef struct S3 {
 		uint8_t __attribute__((__aligned__(8))) a, b;
 	} S3;
-	printf("offsetof(S3, a) %ld\n", offsetof(S3, a));
-	printf("offsetof(S3, b) %ld\n", offsetof(S3, b));
-	printf("sizeof(S3) %ld\n", sizeof(S3));
-	printf("\n");
+	printf("S3\t%ld\t%ld\t%ld\n", offsetof(S3, a), offsetof(S3, b), sizeof(S3));
 
 	// alignof per field with expression
 	typedef struct S4 {
 		uint8_t __attribute__((__aligned__(sizeof(uint16_t)))) a;
 		uint8_t __attribute__((__aligned__(sizeof(uint16_t)))) b;
 	} S4;
-	printf("offsetof(S4, a) %ld\n", offsetof(S4, a));
-	printf("offsetof(S4, b) %ld\n", offsetof(S4, b));
-	printf("sizeof(S4) %ld\n", sizeof(S4));
-	printf("\n");
+	printf("S4\t%ld\t%ld\t%ld\n", offsetof(S4, a), offsetof(S4, b), sizeof(S4));
 
 	// alignof per composite field
 	typedef struct S5 {
 		uint8_t __attribute__((__aligned__(sizeof(uint16_t)))) a, b;
 	} S5;
-	printf("offsetof(S5, a) %ld\n", offsetof(S5, a));
-	printf("offsetof(S5, b) %ld\n", offsetof(S5, b));
-	printf("sizeof(S5) %ld\n", sizeof(S5));
-	printf("\n");
-
-
+	printf("S5\t%ld\t%ld\t%ld\n", offsetof(S5, a), offsetof(S5, b), sizeof(S5));
 }

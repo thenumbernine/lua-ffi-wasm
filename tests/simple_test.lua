@@ -1,3 +1,4 @@
+#!/usr/bin/env luajit
 -- I think their test.c / test.lua got too out of hand too quick
 -- so here's me easing things more slowly ...
 print'begin simple_test'

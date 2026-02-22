@@ -11,9 +11,9 @@ This repo contains a Makefile for compiling, the submodules, and the lua-interop
 Also this has some lua patch files in `lua-patch/` for doing the following:
 - loading `luaopen_ffi` on startup so that `require 'ffi'` works.
 - ignoring `LL` / `ULL` suffixes on numbers.  Maybe I'll get around to boxing them in `int64_t`/`uint64_t` cdata
+- comparing cdata pointers with nil so `(void*)NULL == nil` returns true.
 patch TODO:
 - take all the luaffifb modifications and just cram them straight into Lua.
-- add support for comparing cdata pointers with nil so `(void*)NULL == nil` returns true.
 
 # Compiling:
 

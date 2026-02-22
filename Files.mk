@@ -2,16 +2,17 @@
 LUA_SRCS = $(patsubst %, lua/%, \
 	lapi.c lcode.c lctype.c ldebug.c ldo.c ldump.c \
 	lfunc.c lgc.c lmem.c lopcodes.c lparser.c \
-	lstate.c lstring.c ltable.c ltm.c lundump.c lvm.c lzio.c \
+	lstate.c lstring.c ltable.c ltm.c lundump.c lzio.c \
 	lauxlib.c lbaselib.c lcorolib.c ldblib.c liolib.c lmathlib.c \
 	loadlib.c loslib.c lstrlib.c ltablib.c lutf8lib.c \
 )
 LUA_SRCS += $(patsubst %, lua-patch/%, \
-	lobject.c linit.c llex.c \
+	lobject.c linit.c llex.c lvm.c \
 )
 LUA_CFLAGS = \
 	-DLUA_COMPAT_5_3 \
-	-I `pwd`/lua/
+	-I `pwd`/lua/ \
+	-I `pwd`/luaffifb/
 
 # LuaFFI-FB but with the calling replaced with libffi calling (so I guess I just liked their cdefs parser...  and bit field support .. but their pointer support is limited, only 3 nested ...)
 LUAFFIFB_SRCS = $(patsubst %, luaffifb/%, \

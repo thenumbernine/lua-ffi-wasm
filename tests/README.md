@@ -1,0 +1,1 @@
+I've already added some tests to the `luaffifb` subfolder.  I'm tempted to just throw all the source from these three submodules into the root folder and not worry about patching them or making them interoperable on their own.

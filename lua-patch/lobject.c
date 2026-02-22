@@ -295,15 +295,16 @@ static const char *l_str2int (const char *s, lua_Integer *result) {
       a = a * 10 + d;
       empty = 0;
     }
-   
-   	// skip int64/uint64 suffix
-	// TODO convert it to a ffi boxed type
-	if (s[0] == 'L' && s[1] == 'L') {
-	  s += 2;
-	} else if (s[0] == 'U' && s[1] == 'L' && s[2] == 'L') {
-	  s += 3;
-	}
   }
+
+  // skip int64/uint64 suffix
+  // TODO convert it to a ffi boxed type
+  if (s[0] == 'L' && s[1] == 'L') {
+    s += 2;
+  } else if (s[0] == 'U' && s[1] == 'L' && s[2] == 'L') {
+    s += 3;
+  }
+
   while (lisspace(cast_uchar(*s))) s++;  /* skip trailing spaces */
   if (empty || *s != '\0') return NULL;  /* something wrong in the numeral */
   else {

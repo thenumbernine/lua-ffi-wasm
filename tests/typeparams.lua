@@ -21,7 +21,9 @@ local int_2nd = ffi.typeof('$', int)
 assert(int == int_2nd)
 
 -- make sure structs can use them
+local int8_1 = ffi.typeof('$[1]', int8_t)	-- use arrays since the numbers themselves would be converted to lua numbers
 local int16_1 = ffi.typeof('$[1]', int16_t)	-- use arrays since the numbers themselves would be converted to lua numbers
+local int32_1 = ffi.typeof('$[1]', int32_t)	-- use arrays since the numbers themselves would be converted to lua numbers
 local int64_1 = ffi.typeof('$[1]', int64_t)	-- use arrays since the numbers themselves would be converted to lua numbers
 
 ffi.cdef([[
@@ -37,16 +39,23 @@ local a = A()
 assert(ffi.typeof(a) == A)
 assert(ffi.typeof(a.a), int16_1)
 assert(ffi.typeof(a.b), int64_1)
+assert(ffi.sizeof(A) == 16)
 
 -- try again but with anonymous type
 local B = ffi.typeof([[struct {
 	$ a;
 	$ b;
-}]], int16_1, int64_1)
+}]], int8_1, int32_1)
 
 local b = B()
 assert(ffi.typeof(b) == B)
-assert(ffi.typeof(b.a), int16_1)
-assert(ffi.typeof(b.b), int64_1)
+assert(ffi.typeof(b.a), int8_1)
+assert(ffi.typeof(b.b), int32_1)
+assert(ffi.sizeof(B) == 8)
 
-assert(ffi.sizeof(A) == ffi.sizeof(B))
+local C = ffi.typeof([[struct { $ a, b; $ c, d; }]], A, B)
+assert(ffi.offsetof(C, 'a') == 0)
+assert(ffi.offsetof(C, 'b') == 16)
+assert(ffi.offsetof(C, 'c') == 32)
+assert(ffi.offsetof(C, 'd') == 40)
+assert(ffi.sizeof(C) == 48)

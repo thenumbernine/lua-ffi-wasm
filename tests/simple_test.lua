@@ -80,7 +80,7 @@ print('in Lua, test_vp = ', lib.test_vp)
 local vp2 = lib.test_vfp_vfp(lib.test_vp)
 print('in Lua, test_vfp_vfp(test_vp) = ', vp2)	-- TODO this has tostring() that is off by a bit ...
 --print('calling the C function passed through another C function to see if it still works...')
-vp2()	-- TODO this is calling twice ...
+vp2()
 assert.eq(lib.test_vp, lib.test_vfp_vfp(lib.test_vp), 'is the passed-thru C-function equal the original?')
 
 -- works
@@ -89,8 +89,8 @@ print('(void*)test_vp = ', vp_test_vp)
 assert.eq(lib.test_vp, vp_test_vp, 'is test_vp == (void*)test_vp?')
 
 
-do --for rep=1,5 do
---print('!!!!!!!! BEGINNING REPEAT '..rep..' !!!!!!!!')
+for rep=1,50 do
+print('!!!!!!!! BEGINNING REPEAT '..rep..' !!!!!!!!')
 	-- how to test void() functions... state change
 
 	lib.var = 0
@@ -127,7 +127,6 @@ do --for rep=1,5 do
 
 
 	-- testing return & single arguments
-	-- TODO if I run this *block* multiple times then I get memory corruption problems somewhere deep inside libffi
 	print'test_u8_u8' assert.eq(lib.test_u8_u8(42), 42+1)
 	print'test_s8_s8' assert.eq(lib.test_s8_s8(-42), -42+1)
 	print'test_u16_u16' assert.eq(lib.test_u16_u16(345), 345+1)

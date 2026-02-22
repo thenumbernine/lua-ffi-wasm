@@ -14,7 +14,14 @@ include Files.mk
 CC=clang
 O=.o
 DIST=lua.out	# because 'lua' is a submodule - name in the dir is already used
-CFLAGS+= -O2 -fPIC
+
+CFLAGS =  -fPIC
+
+# release
+#CFLAGS+= -DNDEBUG -O2
+# debug
+CFLAGS+= -DDEBUG -O0 -gdwarf-2 -mfix-and-continue
+
 LUA_SRCS+= lua/lua.c
 
 # my libffi branch is configured for wasm32 so here I am using the builtin.

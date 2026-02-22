@@ -1,6 +1,7 @@
 #!/usr/bin/env luajit
 local ffi = require 'ffi'
 
+-- test lua -> C -> lua
 cb = function(s)
 	print('in callback')
 	print('arg type', ffi.typeof(s))

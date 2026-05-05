@@ -4,6 +4,11 @@ local ffi = require 'ffi'
 print("offsetof(a) offsetof(b) sizeof()")
 
 ffi.cdef[[
+
+// do single line comments work?
+
+/* do block comments work? */
+
 typedef struct S1 {
 	uint8_t a;
 	uint8_t b;

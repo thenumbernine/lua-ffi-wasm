@@ -23,12 +23,15 @@ local addr = 0
 
 local o = ffi.cast(ptrtype, d + addr)[0]
 addr = addr + ffi.sizeof(uint24_t)
-print(o, o:value())
+local a = uint24_t(o)
+print(o, o:value(), a, a:value())
 
 local o = ffi.cast(ptrtype, d + addr)[0]
 addr = addr + ffi.sizeof(uint24_t)
-print(o, o:value())
+local a = uint24_t(o)
+print(o, o:value(), a, a:value())
 
 local o = ffi.cast(ptrtype, d + addr)[0]
 addr = addr + ffi.sizeof(uint24_t)
-print(o, o:value())
+local a = uint24_t(o)
+print(o, o:value(), a, a:value())

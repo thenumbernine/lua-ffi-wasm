@@ -19,4 +19,6 @@ local function arrayType(baseType, size)
 	return ffi.typeof('$['..size..']', baseType)
 end
 local T1 = arrayType(uint8_t, -(0x03c2fc - 0x03c406))
+print(T1)
 local T2 = arrayType(uint8_t, -(0x03c406 - 0x040000))
+print(T2)

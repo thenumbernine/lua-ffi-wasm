@@ -1,9 +1,13 @@
 #!/usr/bin/env luajit
 local ffi = require 'ffi'
 local assert = require 'ext.assert'
-local uint24_t = ffi.typeof[[struct __attribute__((packed)) {
-	uint16_t lo;
-	uint8_t hi;
+local uint24_t = ffi.typeof[[
+union __attribute__((packed)) {
+	struct __attribute__((packed)) {
+		uint16_t lo;
+		uint8_t hi;
+	};
+	uint8_t s[3];
 }]]
 assert.eq(ffi.sizeof(uint24_t), 3)
 ffi.metatype(uint24_t, {

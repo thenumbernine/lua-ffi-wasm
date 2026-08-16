@@ -6,7 +6,7 @@ include Files.mk
 
 # libffi has its own emscripten configure and build
 # but what it spits out isn't "relocatable" i.e. I can't just link it below
-# so here's what I found in the libffi/src/wasm32/Makefile:
+# so here's what I found in the libffi/src/wasm/Makefile:
 LIBFFI_SRCS = $(patsubst %, libffi/%, \
 	src/prep_cif.c \
 	src/types.c \
@@ -15,12 +15,12 @@ LIBFFI_SRCS = $(patsubst %, libffi/%, \
 	src/closures.c \
 	src/tramp.c \
 	src/debug.c \
-	src/wasm32/ffi.c \
+	src/wasm/ffi.c \
 )
-LIBFFI_CFLAGS = -I libffi/src/wasm32/include/ -I libffi/src/wasm -I libffi/include
+LIBFFI_CFLAGS = -I libffi/src/wasm/include/ -I libffi/src/wasm -I libffi/include
 
 # luaffifb will use libffi
-LUAFFIFB_CFLAGS += -I . -I libffi/src/wasm32/include -I libffi/src/wasm
+LUAFFIFB_CFLAGS += -I . -I libffi/src/wasm/include -I libffi/src/wasm
 
 # https://stackoverflow.com/a/23324703/2714073
 #CWD := $(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST)))))
@@ -83,12 +83,12 @@ DIST_OBJS= $(patsubst %.c, %$(O), \
 #	# I suspect I shouldn't need to add either ... and that the wasi brew distribution is deficient?  or the brew configuration is messed up (since I'm export PATH this whole thing)
 #
 #	#CFLAGS+= --sysroot /Users/chris/Projects/other/wasi-libc/build # why ask me for an install dir if you're just going to install to ./sysroot ?
-#	#CFLAGS+= --target=wasm32-wasi # works
+#	#CFLAGS+= --target=wasm-wasi # works
 #	#CFLAGS+= --target=wasm64 # 'string.h' file not found
 #	#CFLAGS+= --target=wasm64-wasi # 'string.h' file not found
 #	#CFLAGS+= --target=wasm64-unknown-wasi # 'string.h' file not found
-#	CFLAGS+= --target=wasm32-unknown-wasi # works
-#	LDFLAGS+= --target=wasm32-unknown-wasi
+#	CFLAGS+= --target=wasm-unknown-wasi # works
+#	LDFLAGS+= --target=wasm-unknown-wasi
 #	CFLAGS+= -O2
 #
 #	# for signals:
@@ -213,16 +213,16 @@ clean:
 
 # compile rule for libffi, which needs some extra includes...
 #
-# ok there's libffi/src/wasm32/ffitarget.h that comes with libffi
-# and there's libffi/src/wasm32/include/ffitarget.h that is generated from `emconfigure autoreconf -v -i && cd src/wasm32 && emconfigure ../../configure`
+# ok there's libffi/src/wasm/ffitarget.h that comes with libffi
+# and there's libffi/src/wasm/include/ffitarget.h that is generated from `emconfigure autoreconf -v -i && cd src/wasm && emconfigure ../../configure`
 # and the dynamically generated one should be more legit right? after all, we have to dynamically generate the ffi.h because it's just not there to begin with
 # and neither is good.
-# the generated libffi/src/wasm32/include/ffitarget.h has complex support but not extra fields, which makes the libffi code fail to compile.
-# the builtin libffi/src/wasm32/ffitarget.h has extra ffi_cif fields defined but no complex support, which makes the luaffifb code fail to link.
+# the generated libffi/src/wasm/include/ffitarget.h has complex support but not extra fields, which makes the libffi code fail to compile.
+# the builtin libffi/src/wasm/ffitarget.h has extra ffi_cif fields defined but no complex support, which makes the luaffifb code fail to link.
 # looks like I will be generating it by hand ...
-# 1) copy libffi/src/wasm32/ffitarget.h libffi/src/wasm32/include/ffitarget.h
+# 1) copy libffi/src/wasm/ffitarget.h libffi/src/wasm/include/ffitarget.h
 # 2) add the line to the top: `#define FFI_TARGET_HAS_COMPLEX_TYPE`
-# 3) now libffi/src/wasm32/include/ has the good ffi.h and ffitarget.h
+# 3) now libffi/src/wasm/include/ has the good ffi.h and ffitarget.h
 #
 libffi/%.o: libffi/%.c
 	$(CC) $(CFLAGS) $(LIBFFI_CFLAGS) -c -o $@ $^

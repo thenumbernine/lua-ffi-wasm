@@ -568,35 +568,47 @@ static int check_nil_vs_null(const TValue *t1, const TValue *t2) {
 	// special case for nil vs (void*)null
     if (ttypetag(t1) == LUA_VNIL) {
 //printf("luaV_equalobj ttypetag(t1) == LUA_VNIL, ttypetag(t2)=%d\n", ttypetag(t2));
-      if (ttypetag(t2) == LUA_VUSERDATA) {
+      CData * p2;
+	  if (ttisfulluserdata(t2)) {
 //printf("ttypetag(t2) is LUA_VUSERDATA, getudatamem(uvalue(t2))=%p\n", getudatamem(uvalue(t2)));
-        // && (equalsRegistry(L, -1, &cdata_mt_key))
-        // but what guarantee that it's been initialized? 
-        // and besides, it is hooked up to the Lua stack, and we don't even have stack locations for these
-        // which is why TODO I should just merge the CDATA type into the tt_ field someday...
-        CData * p2 = (CData *)getudatamem(uvalue(t2));
+        p2 = (CData *)getudatamem(uvalue(t2));
+      } else if (ttislightuserdata(t2)) {
+	    p2 = (CData *)pvalue(t2);
+	  } else {
+	    return 0;
+	  }
+
 //printf("p2=%p\n", p2);
-		if (p2) {
-//printf("*p2=%p\n", *(void**)(p2+1));      // why the *(p+1)?  because it was here before I got it
-		  if (*(void**)(p2+1) == NULL) {
+	  if (p2 && p2->type.pointers > 0 && !p2->type.is_array) {		// will it ever be null?
+//printf("*p2=%p\n", *(void**)(p2+1));
+	    void *dataloc = *(void**)(p2+1);
+		if (dataloc == NULL) {
 //printf("returning true\n");
-		    return 1;
-		  }
-        }
+	      return 1;
+	    }
       }
-    } else if (ttypetag(t2) == LUA_VNIL) {
+	} else if (ttypetag(t2) == LUA_VNIL) {
 //printf("luaV_equalobj ttypetag(t2) == LUA_VNIL, ttypetag(t1)=%d\n", ttypetag(t1));
-      if (ttypetag(t1) == LUA_VUSERDATA) {
+      CData * p1;
+	  if (ttisfulluserdata(t1)) {
 //printf("ttypetag(t1) is LUA_VUSERDATA, getudatamem(uvalue(t1))=%p\n", getudatamem(uvalue(t1)));
-        // && (equalsRegistry(L, -1, &cdata_mt_key))
-        CData * p1 = (CData *)getudatamem(uvalue(t1));
-//printf("p1=%p\n", p1);		
-		if (p1) {
-//printf("*p1=%p\n", *(void**)(p1+1));
-          if (*(void**)(p1+1) == NULL) {
+        p1 = (CData *)getudatamem(uvalue(t1));
+	  } else if (ttislightuserdata(t1)) {
+	    p1 = (CData *)pvalue(t1);
+	  } else {
+	    return 0;
+	  }
+
+//printf("p1=%p\n", p1);
+//printf("p1.type.pointers=%d\n", p1->type.pointers);
+//printf("p1.type.is_array=%d\n", p1->type.is_array);
+	  if (p1 && p1->type.pointers > 0 && !p1->type.is_array) {
+//printf("*(p1+1)=%p\n", p1+1);
+		void *dataloc = *(void**)(p1+1);
+//printf("*(void**)(p1+1)=%p\n", *(void**)(p1+1));
+		if (dataloc == NULL) {
 //printf("returning true\n");
-            return 1;
-          }
+          return 1;
         }
       }
     }
@@ -1666,7 +1678,7 @@ void luaV_execute (lua_State *L, CallInfo *ci) {
         StkId ra = RA(i);
         TValue *rb = KB(i);
         /* basic types do not use '__eq'; we can use raw equality */
-        int cond = 
+        int cond =
 		  check_nil_vs_null(s2v(ra), rb)
 		  || luaV_rawequalobj(s2v(ra), rb)
 		  ;

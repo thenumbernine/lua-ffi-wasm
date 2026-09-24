@@ -15,14 +15,16 @@ ifeq ($(DEBUG),1)
 	CFLAGS+= -DDEBUG -O0 -gdwarf-2 -mfix-and-continue
 	TEST_CMD=        echo 'bt' > lldb.batch && lldb --batch -K lldb.batch -o run -f $(LUA) -- test.lua
 	SIMPLE_TEST_CMD= echo 'bt' > lldb.batch && lldb --batch -K lldb.batch -o run -f $(LUA) -- simple_test.lua
+	NARROW_ARGS_CMD= echo 'bt' > lldb.batch && lldb --batch -K lldb.batch -o run -f $(LUA) -- narrow_args.lua
 else
 	# release
 	CFLAGS+= -DNDEBUG -O2
 	TEST_CMD= $(LUA) test.lua
 	SIMPLE_TEST_CMD= $(LUA) simple_test.lua
+	NARROW_ARGS_CMD= $(LUA) narrow_args.lua
 endif
 
-all: libtest.so libsimple_test.so align
+all: libtest.so libsimple_test.so libnarrow_args.so align
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $^
@@ -33,6 +35,10 @@ libtest.so: test.o
 
 #.so for lua to link into
 libsimple_test.so: simple_test.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+#.so for lua to link into
+libnarrow_args.so: narrow_args.o
 	$(CC) $(LDFLAGS) -o $@ $^
 
 # standalone for verifying lua's results
@@ -50,3 +56,7 @@ test: libtest.so libsimple_test.so
 .PHONY: simple_test
 simple_test: ffi.so libsimple_test.so
 	$(SIMPLE_TEST_CMD)
+
+.PHONY: narrow_args
+narrow_args: ffi.so libnarrow_args.so
+	$(NARROW_ARGS_CMD)

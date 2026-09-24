@@ -54,9 +54,9 @@ test: libtest.so libsimple_test.so
 	$(TEST_CMD)
 
 .PHONY: simple_test
-simple_test: ffi.so libsimple_test.so
+simple_test: libsimple_test.so
 	$(SIMPLE_TEST_CMD)
 
 .PHONY: narrow_args
-narrow_args: ffi.so libnarrow_args.so
+narrow_args: libnarrow_args.so
 	$(NARROW_ARGS_CMD)

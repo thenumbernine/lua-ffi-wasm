@@ -1,25 +1,9 @@
 #!/usr/bin/env luajit
--- Narrow integers through libffi, in the two directions callValuePush serves:
--- as a function RETURN (call.c ~line 417) and as an argument handed to a Lua
--- CLOSURE (call.c ~line 615).  The two have different storage conventions and
--- one function reads both, which is what the second half of this file catches.
---
--- RETURNS are widened by libffi into one ffi_arg-sized slot.  Reading them
--- through something wider is wrong wherever sizeof(ffi_arg) is smaller - on
--- wasm32 it is 4 against call.c's __wasm__ CallValue member of int64_t, and a
--- C `return -1` came back as 4294967295 there.  Green on x86_64 either way,
--- since the two widths coincide.
---
--- ⚠ CLOSURE ARGUMENTS are NOT widened to ffi_arg, and the four cb_* checks
--- below FAIL ON x86_64 TODAY, on unmodified upstream:
---     cb_s8    -42     seen as 4294967254   (2^32 - 42)
---     cb_s16   -345    seen as 4294966951
---     cb_s32   -67890  seen as 4294899406
---     cb_u32                                 ok, nothing to lose
--- They are extended to 32 bits, so an 8-byte read picks up a zero-extended
--- value and the sign is gone.  The RETURN round-trips correctly through it,
--- which is why a callback test that only checks the return value sees nothing
--- wrong - that is what the `seen` upvalue below is for.
+-- Narrow integers through libffi, as return values and as arguments passed to
+-- a Lua closure. Returns are widened to a full ffi_arg slot, closure arguments
+-- are not, so each has to be read at the declared width to keep its sign.
+-- The cb_* checks record what the closure received in `seen`, because the
+-- return value round-trips correctly even when the argument was misread.
 print'begin narrow_args'
 local ffi = require 'ffi'
 local assert = require 'ext.assert'

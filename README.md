@@ -1,6 +1,6 @@
 Lua + luaffifb + emscripten's SDL / GLES to WASM -- used a browser port of my LuaJIT + OpenGL + SDL framework, found [here](https://github.com/thenumbernine/glapp-js).
 
-The Lua implementation is Lua 5.4.7, no modifications.
+The Lua implementation is Lua 5.4.7 with some small modifications for LuaJIT parsing compatability.
 
 The FFI support is from my [fork](https://github.com/thenumbernine/luaffifb) of the now-archived [luaffifb](https://github.com/facebookarchive/luaffifb) project.
 
@@ -59,6 +59,15 @@ echo '#define FFI_TARGET_HAS_COMPLEX_TYPE' >> include/ffitarget.h
 ```
 
 And then in `libffi/src/wasm/fficonfig.h`, replace `#define FFI_EXEC_STATIC_TRAMP 1` with `#undef FFI_EXEC_STATIC_TRAMP`.
+
+<hr>
+
+# Lua modifications for LuaJIT compatability:
+
+- Automatically open `luaopen_jit` and assign `jit` global.
+- Adding `luaopen_ffi` to the builtin lib list, accessible via `require 'ffi'`.
+- `LL` and `ULL` suffix parsing.
+- comparing `nil` and ffi cdata `null` returns `true`.
 
 <hr>
 

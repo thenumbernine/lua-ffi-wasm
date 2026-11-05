@@ -8,12 +8,16 @@ The FFI support is from my [fork](https://github.com/thenumbernine/luaffifb) of 
 
 This repo contains a Makefile for compiling, the submodules, and the lua-interop layer JavaScript file.
 
-Also this has some lua patch files in `lua-patch/` for doing the following:
-- loading `luaopen_ffi` on startup so that `require 'ffi'` works.
-- ignoring `LL` / `ULL` suffixes on numbers.  Maybe I'll get around to boxing them in `int64_t`/`uint64_t` cdata
-- comparing cdata pointers with nil so `(void*)NULL == nil` returns true.
-patch TODO:
-- take all the luaffifb modifications and just cram them straight into Lua.
+<hr>
+
+# Lua modifications for LuaJIT compatability:
+
+- Automatically open `luaopen_jit` and assign `jit` global.
+- Adding `luaopen_ffi` to the builtin lib list, accessible via `require 'ffi'`.
+- ignoring `LL` / `ULL` suffixes on numbers.  Maybe I'll get around to boxing them in `int64_t`/`uint64_t` cdata.
+- comparing `nil` and ffi cdata `null` returns `true`.
+
+<hr>
 
 # Compiling:
 
@@ -59,15 +63,6 @@ echo '#define FFI_TARGET_HAS_COMPLEX_TYPE' >> include/ffitarget.h
 ```
 
 And then in `libffi/src/wasm/fficonfig.h`, replace `#define FFI_EXEC_STATIC_TRAMP 1` with `#undef FFI_EXEC_STATIC_TRAMP`.
-
-<hr>
-
-# Lua modifications for LuaJIT compatability:
-
-- Automatically open `luaopen_jit` and assign `jit` global.
-- Adding `luaopen_ffi` to the builtin lib list, accessible via `require 'ffi'`.
-- `LL` and `ULL` suffix parsing.
-- comparing `nil` and ffi cdata `null` returns `true`.
 
 <hr>
 

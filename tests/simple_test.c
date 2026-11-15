@@ -17,9 +17,9 @@ int64_t test_s64() { return -0x123456789; }
 float test_f32() { return -123; }
 double test_f64() { return -123; }
 
-void* test_vp() { 
+void* test_vp() {
 	printf("in C, test_vp = %p\n", test_vp);
-	return (void*)0xdeadbeef; 
+	return (void*)0xdeadbeef;
 }
 void* test_vp2() { return test_vp2; }
 
@@ -67,7 +67,7 @@ void hidden_v() { var = 1357; }
 typedef void (*VFP)();
 VFP test_vfp() { return hidden_v; }
 void test_v_vfp(VFP f) { f(); }
-VFP test_vfp_vfp(VFP f) { 
+VFP test_vfp_vfp(VFP f) {
 	printf("in C, test_vfp_vfp got %p\n", f);
-	return f; 
+	return f;
 }
